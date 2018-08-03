@@ -19,7 +19,8 @@ find_package(BISON REQUIRED)
 find_package(FLEX REQUIRED)
 
 catkin_package(
-  LIBRARIES ${PROJECT_NAME} 
+  INCLUDE_DIRS include/
+  LIBRARIES synthesis
 )
 
 add_subdirectory(src)
