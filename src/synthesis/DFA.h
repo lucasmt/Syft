@@ -48,6 +48,8 @@ class DFA
 	// back is called after the components are constructed
 	void construct_from_comp_front(string filename);
 	void construct_from_comp_back(vbdd& S2S, vbdd& S2P, vbdd& Svars, vbdd& Ivars, vbdd& Ovars, std::vector<int> IS);
+	vector<BDD> res_orig;
+	vector<BDD> S2P_orig;
 
     protected:
     private:

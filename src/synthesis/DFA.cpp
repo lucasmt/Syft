@@ -165,6 +165,9 @@ void DFA::construct_from_comp_front(string filename){
 }
 
 void DFA::construct_from_comp_back(vbdd& S2S, vbdd& S2P, vbdd& Svars, vbdd& Ivars, vbdd& Ovars, std::vector<int> IS){
+  // Back up information needed for playing the game later
+  res_orig = res;
+  S2P_orig = S2P;
   
   // substitute P from res, first create a substitution/projection vector, then use the batch substitution function
   vbdd subnProj;
@@ -229,6 +232,16 @@ void DFA::construct_from_comp_back(vbdd& S2S, vbdd& S2P, vbdd& Svars, vbdd& Ivar
   }
   for (int i=0; i<Ovars.size(); i++){
     output.push_back(i+nbits+Ivars.size());
+  }
+
+  // rename variables
+  variables.clear();
+  variables.push_back("variable");
+  for (int i=0; i<Ivars.size(); i++){
+    variables.push_back("IN"+std::to_string(i));
+  }
+  for (int i=0; i<Ovars.size(); i++){
+    variables.push_back("OUT"+std::to_string(i));
   }
 
 }
