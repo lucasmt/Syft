@@ -96,7 +96,7 @@ int main(int argc, char ** argv){
 	  std::cout<<pair.first<<": ";
 	  test.printBDDSat(pair.second);
 	  }*/
-      playGame(*(test.bdd), S2O);
+      //      playGame(*(test.bdd), S2O);
     }
     else
       cout<<"unrealizable, time = "<<time<<endl;
