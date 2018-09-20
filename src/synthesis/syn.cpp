@@ -1,5 +1,9 @@
 #include "syn.h"
 
+using std::string;
+using std::unordered_map;
+using std::vector;
+
 syn::syn(Cudd* m, string filename, string partfile)
 {
     //ctor
