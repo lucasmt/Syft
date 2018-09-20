@@ -1,8 +1,14 @@
 #include <iostream>
 #include <string>
+#include <memory>
+#include <chrono>
 #include "syn.h"
 
-using namespace std;
+using std::string;
+using std::cout;
+using std::endl;
+namespace chrono = std::chrono;
+
 string get_DFAfile(string LTLFfile){
     string FOL = LTLFfile+".mona";
     string LTLF2FOL = "./ltlf2fol NNF "+LTLFfile+" >"+FOL;

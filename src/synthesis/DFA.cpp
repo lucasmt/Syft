@@ -1,7 +1,15 @@
 #include "DFA.h"
-#include <string>
-using namespace std;
-using namespace boost;
+
+using std::string;
+using std::ifstream;
+using std::vector;
+using std::set;
+using boost::algorithm::is_any_of;
+using boost::algorithm::split;
+using std::to_string;
+using std::cout;
+using std::endl;
+using std::stoi;
 
 //update test
 

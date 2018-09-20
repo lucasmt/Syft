@@ -3,7 +3,9 @@
 #include <algorithm>
 #include "syn.h"
 
-using namespace std;
+using std::string;
+using std::cout;
+using std::endl;
 
 void printVector(std::vector<int>& state){
   for(auto & s : state)
