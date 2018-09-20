@@ -136,7 +136,7 @@ bool syn::realizablity_sys(unordered_map<unsigned int, BDD>& IFstrategy){
 	
         InputFirstSynthesis IFsyn(*mgr);
         IFstrategy = IFsyn.synthesize(W[cur], O);
-        vector<CUDD::BDD> tmp = bdd->res;
+        vector<BDD> tmp = bdd->res;
         tmp.push_back(bdd->finalstatesBDD);
         cout<<"Iteration: "<<iteration<<endl;
         cout<<"BDD nodes: "<<mgr->nodeCount(tmp)<<endl;
@@ -146,7 +146,7 @@ bool syn::realizablity_sys(unordered_map<unsigned int, BDD>& IFstrategy){
     //std::cout<<"unrealizable, winning set: "<<std::endl;
     //std::cout<<Wprime[Wprime.size()-1]<<std::endl;
     // assert(false);
-    vector<CUDD::BDD> tmp = bdd->res;
+    vector<BDD> tmp = bdd->res;
     tmp.push_back(bdd->finalstatesBDD);
     cout<<"Iteration: "<<iteration<<endl;
     cout<<"BDD nodes: "<<mgr->nodeCount(tmp)<<endl;
@@ -187,14 +187,14 @@ bool syn::realizablity_env(std::unordered_map<unsigned, BDD>& IFstrategy){
 
 	    InputFirstSynthesis IFsyn(*mgr);
         IFstrategy = IFsyn.synthesize(transducer, O);
-        vector<CUDD::BDD> tmp = bdd->res;
+        vector<BDD> tmp = bdd->res;
         tmp.push_back(bdd->finalstatesBDD);
 
         cout<<"BDD nodes: "<<mgr->nodeCount(tmp)<<endl;
 
         return true;
     }
-    vector<CUDD::BDD> tmp = bdd->res;
+    vector<BDD> tmp = bdd->res;
     tmp.push_back(bdd->finalstatesBDD);
 
     cout<<"BDD nodes: "<<mgr->nodeCount(tmp)<<endl;
