@@ -8,4 +8,4 @@
 #include <set>
 #include <iostream>
 
-using namespace CUDD;
+//using namespace CUDD;
