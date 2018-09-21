@@ -6,6 +6,8 @@
 using std::string;
 using std::cout;
 using std::endl;
+using std::shared_ptr;
+using std::make_shared;
 
 void printVector(std::vector<int>& state){
   for(auto & s : state)
@@ -84,7 +86,7 @@ int main(int argc, char ** argv){
         filename = argv[1];
         partfile = argv[2];
     }
-    Cudd* mgr = new Cudd();
+    shared_ptr<Cudd> mgr = make_shared<Cudd>();
     syn test(mgr, filename, partfile);
 
     std::unordered_map<unsigned, BDD> S2O;

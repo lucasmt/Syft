@@ -8,7 +8,7 @@ typedef std::vector<BDD> vbdd;
 class DFA
 {
     public:
-        DFA(Cudd* m);
+        DFA(std::shared_ptr<Cudd> m);
 	DFA();
         virtual ~DFA();
         void initialize(std::string filename, std::string partfile);
@@ -37,7 +37,7 @@ class DFA
         //new bdd constructer
         void construct_bdd_new();
 
-        Cudd* mgr;
+        std::shared_ptr<Cudd> mgr;
 
 	// domain-spec separate construction
 	// Front need to be called before variable construction for domain

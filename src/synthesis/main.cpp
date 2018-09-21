@@ -1,8 +1,12 @@
 #include <iostream>
 #include <string>
+#include <memory>
 #include "syn.h"
 
 using std::string;
+using std::shared_ptr;
+using std::make_shared;
+using std::move;
 using std::cout;
 using std::endl;
 
@@ -19,8 +23,8 @@ int main(int argc, char ** argv){
         partfile = argv[2];
         flag = argv[3];
     }
-    Cudd* mgr = new Cudd();
-    syn test(mgr, filename, partfile);
+    shared_ptr<Cudd> mgr = make_shared<Cudd>();
+    syn test(move(mgr), filename, partfile);
 
     bool res = 0;
     std::unordered_map<unsigned, BDD> strategy;

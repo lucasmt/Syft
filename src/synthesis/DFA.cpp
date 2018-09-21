@@ -10,22 +10,25 @@ using std::to_string;
 using std::cout;
 using std::endl;
 using std::stoi;
+using std::shared_ptr;
+using std::make_shared;
+using std::move;
 
 //update test
 
-DFA::DFA(Cudd* m){
-  mgr = m;
+DFA::DFA(shared_ptr<Cudd> m){
+    mgr = move(m);
     //ctor
 }
 
 DFA::DFA(){
-  mgr = new Cudd();
+    mgr = make_shared<Cudd>();
 }
 
 DFA::~DFA()
 {
     //dtor
-    delete mgr;// = NULL;
+    //delete mgr;// = NULL;
 }
 void DFA::initialize(string filename, string partfile){
     //ctor
