@@ -3,7 +3,7 @@
 #include <memory>
 
 #include "optional.h"
-#include "syn.h"
+#include "DFAGameSolver.h"
 
 using std::string;
 using std::shared_ptr;
@@ -27,7 +27,7 @@ int main(int argc, char ** argv){
         flag = argv[3];
     }
     shared_ptr<Cudd> mgr = make_shared<Cudd>();
-    syn test(move(mgr), filename, partfile);
+    DFAGameSolver test(move(mgr), filename, partfile);
     
     my::optional<unordered_map<unsigned, BDD>> strategy;
     

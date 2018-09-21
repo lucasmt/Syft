@@ -1,5 +1,5 @@
-#ifndef SYN_H
-#define SYN_H
+#ifndef DFAGAMESOLVER_H
+#define DFAGAMESOLVER_H
 
 #include <memory>
 
@@ -8,17 +8,18 @@
 #include "InputFirst.h"
 #include "optional.h"
 
-class syn
+class DFAGameSolver
 {
     public:
-        syn(std::shared_ptr<Cudd> m, std::string filename, std::string partfile);
-	syn(std::shared_ptr<Cudd> m, std::unique_ptr<DFA> d);
+        DFAGameSolver(std::shared_ptr<Cudd> m, std::string filename, std::string partfile);
+
+	DFAGameSolver(std::shared_ptr<Cudd> m, std::unique_ptr<DFA> d);
 	
 	my::optional<std::unordered_map<unsigned int, BDD>> realizablity();
 	
 	my::optional<std::unordered_map<unsigned int, BDD>> realizablity_variant();
 	
-        virtual ~syn();
+        virtual ~DFAGameSolver();
 	void printBDDSat(BDD b);
 
 	std::unique_ptr<DFA> bdd;
@@ -44,4 +45,4 @@ class syn
         void strategy(std::vector<BDD>& S2O);
 };
 
-#endif // SYN_H
+#endif // DFAGAMESOLVER_H

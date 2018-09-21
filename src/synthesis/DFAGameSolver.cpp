@@ -1,4 +1,4 @@
-#include "syn.h"
+#include "DFAGameSolver.h"
 
 #include <memory>
 
@@ -10,7 +10,7 @@ using std::unique_ptr;
 using std::make_unique;
 using std::move;
 
-syn::syn(shared_ptr<Cudd> m, string filename, string partfile)
+DFAGameSolver::DFAGameSolver(shared_ptr<Cudd> m, string filename, string partfile)
 {
     //ctor
 
@@ -24,7 +24,7 @@ syn::syn(shared_ptr<Cudd> m, string filename, string partfile)
 
 }
 
-syn::syn(shared_ptr<Cudd> m, unique_ptr<DFA> d)
+DFAGameSolver::DFAGameSolver(shared_ptr<Cudd> m, unique_ptr<DFA> d)
 {
     bdd = move(d);
     mgr = move(m);
@@ -33,12 +33,12 @@ syn::syn(shared_ptr<Cudd> m, unique_ptr<DFA> d)
     bdd->bdd2dot();
 }
 
-syn::~syn()
+DFAGameSolver::~DFAGameSolver()
 {
     //dtor
 }
 
-void syn::initializer(){
+void DFAGameSolver::initializer(){
   for(int i = 0; i < bdd->nbits; i++){
     BDD b = mgr->bddVar();
     bdd->bddvars.push_back(b);
@@ -50,7 +50,7 @@ void syn::initializer(){
 
 }
 
-BDD syn::state2bdd(int s){
+BDD DFAGameSolver::state2bdd(int s){
     string bin = state2bin(s);
     BDD b = mgr->bddOne();
     int nzero = bdd->nbits - bin.length();
@@ -68,7 +68,7 @@ BDD syn::state2bdd(int s){
 
 }
 
-string syn::state2bin(int n){
+string DFAGameSolver::state2bin(int n){
     string res;
     while (n)
     {
@@ -83,12 +83,12 @@ string syn::state2bin(int n){
    return res;
 }
 
-bool syn::fixpoint(){
+bool DFAGameSolver::fixpoint(){
     if(W[cur] == W[cur-1])
         return true;
 }
 
-void syn::printBDDSat(BDD b){
+void DFAGameSolver::printBDDSat(BDD b){
 
   std::cout<<"sat with: ";
   int max = bdd->nstates;
@@ -101,7 +101,7 @@ void syn::printBDDSat(BDD b){
   std::cout<<std::endl;
 }
 
-my::optional<unordered_map<unsigned int, BDD>> syn::realizablity(){
+my::optional<unordered_map<unsigned int, BDD>> DFAGameSolver::realizablity(){
     while(true){
         //cout<<"interative"<<endl;
         //dumpdot(W[cur], "W"+to_string(cur));
@@ -140,7 +140,7 @@ my::optional<unordered_map<unsigned int, BDD>> syn::realizablity(){
     return my::nullopt;
 }
 
-my::optional<unordered_map<unsigned int, BDD>> syn::realizablity_variant(){
+my::optional<unordered_map<unsigned int, BDD>> DFAGameSolver::realizablity_variant(){
     BDD transducer;
     while(true){
         int index;
@@ -187,7 +187,7 @@ my::optional<unordered_map<unsigned int, BDD>> syn::realizablity_variant(){
 }
 
 
-void syn::strategy(vector<BDD>& S2O){
+void DFAGameSolver::strategy(vector<BDD>& S2O){
     vector<BDD> winning;
     for(int i = 0; i < S2O.size(); i++){
         //dumpdot(S2O[i], "S2O"+to_string(i));
@@ -198,7 +198,7 @@ void syn::strategy(vector<BDD>& S2O){
     }
 }
 
-int** syn::outindex(){
+int** DFAGameSolver::outindex(){
     int outlength = bdd->output.size();
     int outwidth = 2;
     int **out = 0;
@@ -211,7 +211,7 @@ int** syn::outindex(){
     return out;
 }
 
-int* syn::state2bit(int n){
+int* DFAGameSolver::state2bit(int n){
     int* s = new int[bdd->nbits];
     for (int i=bdd->nbits-1; i>=0; i--){
       s[i] = n%2;
@@ -221,7 +221,7 @@ int* syn::state2bit(int n){
 }
 
 
-BDD syn::univsyn(){
+BDD DFAGameSolver::univsyn(){
     BDD I = mgr->bddOne();
     BDD tmp = Wprime[cur];
     int index;
@@ -248,7 +248,7 @@ BDD syn::univsyn(){
 
 }
 
-BDD syn::existsyn_invariant(BDD exist, BDD& transducer){
+BDD DFAGameSolver::existsyn_invariant(BDD exist, BDD& transducer){
     BDD tmp = Wprime[cur];
     int offset = bdd->nbits + bdd->nvars;
 
@@ -264,7 +264,7 @@ BDD syn::existsyn_invariant(BDD exist, BDD& transducer){
 
 }
 
-BDD syn::univsyn_invariant(BDD univ){
+BDD DFAGameSolver::univsyn_invariant(BDD univ){
 
     BDD tmp = W[cur];
     BDD elimuniv = tmp.UnivAbstract(univ);
@@ -272,7 +272,7 @@ BDD syn::univsyn_invariant(BDD univ){
 
 }
 
-BDD syn::prime(BDD orign){
+BDD DFAGameSolver::prime(BDD orign){
     int offset = bdd->nbits + bdd->nvars;
     BDD tmp = orign;
     for(int i = 0; i < bdd->nbits; i++){
@@ -281,7 +281,7 @@ BDD syn::prime(BDD orign){
     return tmp;
 }
 
-BDD syn::existsyn(){
+BDD DFAGameSolver::existsyn(){
     BDD O = mgr->bddOne();
     BDD tmp = W[cur];
     int index;
@@ -295,7 +295,7 @@ BDD syn::existsyn(){
 
 }
 
-void syn::dumpdot(BDD &b, string filename){
+void DFAGameSolver::dumpdot(BDD &b, string filename){
     FILE *fp = fopen(filename.c_str(), "w");
     vector<BDD> single(1);
     single[0] = b;

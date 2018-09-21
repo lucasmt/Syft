@@ -1,4 +1,4 @@
-add_library(synthesis SHARED Common.cpp DFA.cpp InputFirst.cpp syn.cpp)
+add_library(synthesis SHARED Common.cpp DFA.cpp InputFirst.cpp DFAGameSolver.cpp)
 include_directories(${CUDD_INCLUDE_DIRS})
 
 add_executable(synth synStrategy.cpp)

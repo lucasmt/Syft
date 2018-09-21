@@ -1,7 +1,7 @@
 #include <iostream>
 #include <string>
 #include <algorithm>
-#include "syn.h"
+#include "DFAGameSolver.h"
 
 using std::string;
 using std::cout;
@@ -87,7 +87,7 @@ int main(int argc, char ** argv){
         partfile = argv[2];
     }
     shared_ptr<Cudd> mgr = make_shared<Cudd>();
-    syn test(mgr, filename, partfile);
+    DFAGameSolver test(mgr, filename, partfile);
 
     std::clock_t begint = std::clock();
     my::optional<std::unordered_map<unsigned, BDD>> S2O = test.realizablity();
