@@ -101,7 +101,7 @@ void syn::printBDDSat(BDD b){
   std::cout<<std::endl;
 }
 
-bool syn::realizablity(unordered_map<unsigned int, BDD>& IFstrategy){
+my::optional<unordered_map<unsigned int, BDD>> syn::realizablity(){
     while(true){
         //cout<<"interative"<<endl;
         //dumpdot(W[cur], "W"+to_string(cur));
@@ -131,17 +131,16 @@ bool syn::realizablity(unordered_map<unsigned int, BDD>& IFstrategy){
 	*/
 	
         InputFirstSynthesis IFsyn(*mgr);
-        IFstrategy = IFsyn.synthesize(W[cur], O);
 
-        return true;
+	return IFsyn.synthesize(W[cur], O);
     }
     std::cout<<"unrealizable, winning set: "<<std::endl;
     std::cout<<Wprime[Wprime.size()-1]<<std::endl;
     assert(false);
-    return false;
+    return my::nullopt;
 }
 
-bool syn::realizablity_variant(std::unordered_map<unsigned, BDD>& IFstrategy){
+my::optional<unordered_map<unsigned int, BDD>> syn::realizablity_variant(){
     BDD transducer;
     while(true){
         int index;
@@ -165,7 +164,7 @@ bool syn::realizablity_variant(std::unordered_map<unsigned, BDD>& IFstrategy){
 
         Wprime.push_back(univsyn_invariant(I));
         if((Wprime[cur].Eval(bdd->initbv.data())).IsOne()){
-            return true;
+            return unordered_map<unsigned int, BDD>();
         }
 
     }
@@ -181,9 +180,9 @@ bool syn::realizablity_variant(std::unordered_map<unsigned, BDD>& IFstrategy){
         transducer.SolveEqn(O, S2O, outindex(), bdd->output.size());
         strategy(S2O);
 
-        return true;
+        return unordered_map<unsigned int, BDD>();
     }
-    return false;
+    return my::nullopt;
 
 }
 

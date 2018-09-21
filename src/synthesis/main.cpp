@@ -1,6 +1,8 @@
 #include <iostream>
 #include <string>
 #include <memory>
+
+#include "optional.h"
 #include "syn.h"
 
 using std::string;
@@ -9,6 +11,7 @@ using std::make_shared;
 using std::move;
 using std::cout;
 using std::endl;
+using std::unordered_map;
 
 int main(int argc, char ** argv){
     string filename;
@@ -25,15 +28,15 @@ int main(int argc, char ** argv){
     }
     shared_ptr<Cudd> mgr = make_shared<Cudd>();
     syn test(move(mgr), filename, partfile);
+    
+    my::optional<unordered_map<unsigned, BDD>> strategy;
+    
+    //if(flag == "1")
+    //    strategy = test.realizablity_variant();
+    //else
+        strategy = test.realizablity();
 
-    bool res = 0;
-    std::unordered_map<unsigned, BDD> strategy;
-    if(flag == "1")
-        res = test.realizablity_variant(strategy);
-    else
-        res = test.realizablity(strategy);
-
-    if(res)
+    if(strategy != my::nullopt)
         cout<<"realizable"<<endl;
     else
         cout<<"unrealizable"<<endl;

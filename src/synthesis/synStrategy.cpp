@@ -89,18 +89,17 @@ int main(int argc, char ** argv){
     shared_ptr<Cudd> mgr = make_shared<Cudd>();
     syn test(mgr, filename, partfile);
 
-    std::unordered_map<unsigned, BDD> S2O;
     std::clock_t begint = std::clock();
-    bool res = test.realizablity(S2O);
+    my::optional<std::unordered_map<unsigned, BDD>> S2O = test.realizablity();
     double time = double(std::clock()-begint) / CLOCKS_PER_SEC;
 
-    if(res){
+    if(S2O != my::nullopt){
       cout<<"realizable, time = "<<time<<endl;
       /*	for (auto & pair : S2O){
 	  std::cout<<pair.first<<": ";
 	  test.printBDDSat(pair.second);
 	  }*/
-      playGame(*(test.bdd), S2O);
+      playGame(*(test.bdd), *S2O);
     }
     else
       cout<<"unrealizable, time = "<<time<<endl;

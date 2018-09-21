@@ -6,14 +6,18 @@
 #include "Common.h"
 #include "DFA.h"
 #include "InputFirst.h"
+#include "optional.h"
 
 class syn
 {
     public:
         syn(std::shared_ptr<Cudd> m, std::string filename, std::string partfile);
 	syn(std::shared_ptr<Cudd> m, std::unique_ptr<DFA> d);
-        bool realizablity(std::unordered_map<unsigned int, BDD>& IFstrategy);
-        bool realizablity_variant(std::unordered_map<unsigned int, BDD>& IFstrategy);
+	
+	my::optional<std::unordered_map<unsigned int, BDD>> realizablity();
+	
+	my::optional<std::unordered_map<unsigned int, BDD>> realizablity_variant();
+	
         virtual ~syn();
 	void printBDDSat(BDD b);
 
