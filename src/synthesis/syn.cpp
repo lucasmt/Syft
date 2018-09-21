@@ -1,5 +1,7 @@
 #include "syn.h"
 
+#include <memory>
+
 using std::string;
 using std::unordered_map;
 using std::vector;
@@ -10,12 +12,12 @@ using std::move;
 using std::cout;
 using std::endl;
 
-syn::syn(Cudd* m, string filename, string partfile)
+syn::syn(shared_ptr<Cudd> m, string filename, string partfile)
 {
     //ctor
 
     //Cudd *p = &mgr;
-    bdd = new DFA(m);
+    bdd = make_unique<DFA>(m);
     bdd->initialize(filename, partfile);
     mgr = m;
     initializer();
@@ -24,10 +26,10 @@ syn::syn(Cudd* m, string filename, string partfile)
 
 }
 
-syn::syn(Cudd* m, DFA* d)
+syn::syn(shared_ptr<Cudd> m, unique_ptr<DFA> d)
 {
-    bdd = d;
-    mgr = m;
+    bdd = move(d);
+    mgr = move(m);
     initializer();
 
     bdd->bdd2dot();

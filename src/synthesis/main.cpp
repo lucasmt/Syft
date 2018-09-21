@@ -5,6 +5,9 @@
 #include "syn.h"
 
 using std::string;
+using std::shared_ptr;
+using std::make_shared;
+using std::move;
 using std::cout;
 using std::endl;
 namespace chrono = std::chrono;
@@ -37,7 +40,8 @@ int main(int argc, char ** argv){
         partfile = argv[2];
         starting_player = argv[3];
     }
-    Cudd* mgr = new Cudd();
+
+    shared_ptr<Cudd> mgr = make_shared<Cudd>();
     clock_t c_mona_dfa_end = clock();
     auto t_mona_dfa_end = chrono::high_resolution_clock::now();
     autfile = get_DFAfile(filename);
@@ -46,7 +50,7 @@ int main(int argc, char ** argv){
               << "DFA constructed by MONA wall clock time passed: "
               << std::chrono::duration<double, std::milli>(t_mona_dfa_end-t_start).count()
               << " ms\n";
-    syn test(mgr, autfile, partfile);
+    syn test(move(mgr), autfile, partfile);
     clock_t c_dfa_end = clock();
     auto t_dfa_end = chrono::high_resolution_clock::now();
     std::cout << "DFA CPU time used: "
