@@ -116,7 +116,7 @@ bool syn::realizablity(unordered_map<unsigned int, BDD>& IFstrategy){
 	//        Wprime.push_back(existsyn());
         //assert(cur = (W.size() - 1));
     }
-    if(Wprime[cur-1].Eval(bdd->initbv).IsOne()){
+    if(Wprime[cur-1].Eval(bdd->initbv.data()).IsOne()){
         BDD O = mgr->bddOne();
 	//        vector<BDD> S2O;
         for(int i = 0; i < bdd->output.size(); i++){
@@ -164,12 +164,12 @@ bool syn::realizablity_variant(std::unordered_map<unsigned, BDD>& IFstrategy){
         }
 
         Wprime.push_back(univsyn_invariant(I));
-        if((Wprime[cur].Eval(bdd->initbv)).IsOne()){
+        if((Wprime[cur].Eval(bdd->initbv.data())).IsOne()){
             return true;
         }
 
     }
-    if((Wprime[cur-1].Eval(bdd->initbv)).IsOne()){
+    if((Wprime[cur-1].Eval(bdd->initbv.data())).IsOne()){
       // TODO: use ifstrategysynthesis
         BDD O = mgr->bddOne();
 	vector<BDD> S2O;
