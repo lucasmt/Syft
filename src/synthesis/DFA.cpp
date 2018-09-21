@@ -43,7 +43,7 @@ void DFA::initialize(string filename, string partfile){
     cout<<"The number of state variables: "<<nbits<<endl;
     read_partfile(partfile);
 
-    initbv = new int[nbits];
+    initbv = vector<int>(nbits);
     int temp = init;
     for (int i=nbits-1; i>=0; i--){
       initbv[i] = temp%2;
@@ -224,7 +224,7 @@ void DFA::construct_from_comp_back(vbdd& S2S, vbdd& S2P, vbdd& Svars, vbdd& Ivar
   bddvars.insert(bddvars.end(), Ovars.begin(), Ovars.end());
   //std::cout<<"constructing bdd with "<<bddvars.size()<<"variables"<<std::endl;
   // make init bitvector (final states is a bdd, does not need change)
-  initbv = new int[nbits+nvars+Svars.size()];
+  initbv = vector<int>(nbits+nvars+Svars.size());
   int temp = init;
   for (int i=nbits-1; i>=0; i--){
     initbv[i] = temp%2;

@@ -21,7 +21,7 @@ class DFA
 	BDD state2bdd(int s);
         int nbits;
         int init;
-	int* initbv;
+	std::vector<int> initbv;
         int nstates;
 
         int nvars;

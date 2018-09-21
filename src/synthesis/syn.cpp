@@ -128,7 +128,7 @@ bool syn::realizablity_sys(unordered_map<unsigned int, BDD>& IFstrategy){
         if(fixpoint())
             break;
     }
-    if(Wprime[cur-1].Eval(bdd->initbv).IsOne()){
+    if(Wprime[cur-1].Eval(bdd->initbv.data()).IsOne()){
         BDD O = mgr->bddOne();
         for(int i = 0; i < bdd->output.size(); i++){
             O *= bdd->bddvars[bdd->output[i]];
@@ -178,7 +178,7 @@ bool syn::realizablity_env(std::unordered_map<unsigned, BDD>& IFstrategy){
             break;
 
     }
-    if((Wprime[cur-1].Eval(bdd->initbv)).IsOne()){
+    if((Wprime[cur-1].Eval(bdd->initbv.data())).IsOne()){
         BDD O = mgr->bddOne();
         for(int i = 0; i < bdd->output.size(); i++){
             O *= bdd->bddvars[bdd->output[i]];
