@@ -10,59 +10,26 @@ using std::unique_ptr;
 using std::make_unique;
 using std::move;
 
-DFAGameSolver::DFAGameSolver(shared_ptr<Cudd> m, string filename, string partfile)
-{
-    //ctor
-
-    //Cudd *p = &mgr;
-    bdd = make_unique<DFA>(m);
-    bdd->initialize(filename, partfile);
-    mgr = m;
-    initializer();
-
-    bdd->bdd2dot();
-
-}
-
-DFAGameSolver::DFAGameSolver(shared_ptr<Cudd> m, unique_ptr<DFA> d)
-{
-    bdd = move(d);
-    mgr = move(m);
-    initializer();
-
-    bdd->bdd2dot();
-}
+DFAGameSolver::DFAGameSolver(shared_ptr<Cudd> m)
+    : mgr(move(m))
+{}
 
 DFAGameSolver::~DFAGameSolver()
-{
-    //dtor
-}
+{}
 
-void DFAGameSolver::initializer(){
-  for(int i = 0; i < bdd->nbits; i++){
-    BDD b = mgr->bddVar();
-    bdd->bddvars.push_back(b);
-  }
-    W.push_back(bdd->finalstatesBDD);
-    Wprime.push_back(bdd->finalstatesBDD);
-    cur = 0;
-
-
-}
-
-BDD DFAGameSolver::state2bdd(int s){
+BDD DFAGameSolver::state2bdd(int s, const DFA& dfa){
     string bin = state2bin(s);
     BDD b = mgr->bddOne();
-    int nzero = bdd->nbits - bin.length();
-    //cout<<nzero<<endl;
+    int nzero = dfa.nbits - bin.length();
+
     for(int i = 0; i < nzero; i++){
-        b *= !bdd->bddvars[i];
+        b *= !dfa.bddvars[i];
     }
     for(int i = 0; i < bin.length(); i++){
         if(bin[i] == '0')
-            b *= !bdd->bddvars[i+nzero];
+            b *= !dfa.bddvars[i+nzero];
         else
-            b *= bdd->bddvars[i+nzero];
+            b *= dfa.bddvars[i+nzero];
     }
     return b;
 
@@ -83,102 +50,107 @@ string DFAGameSolver::state2bin(int n){
    return res;
 }
 
-bool DFAGameSolver::fixpoint(){
-    if(W[cur] == W[cur-1])
-        return true;
+bool DFAGameSolver::reached_fixpoint(const vector<BDD>& winning_states){
+    size_t last = winning_states.size() - 1;
+    
+    return winning_states[last] == winning_states[last - 1];
 }
 
-void DFAGameSolver::printBDDSat(BDD b){
+void DFAGameSolver::printBDDSat(const BDD& b, const DFA& dfa){
 
   std::cout<<"sat with: ";
-  int max = bdd->nstates;
+  int max = dfa.nstates;
   
   for (int i=0; i<max; i++){
-    if (b.Eval(state2bit(i)).IsOne()){
-      std::cout<<i<<", ";
+      if (b.Eval(state2bit(i, dfa).data()).IsOne()){
+	  std::cout<<i<<", ";
     }
   }
   std::cout<<std::endl;
 }
 
-my::optional<unordered_map<unsigned int, BDD>> DFAGameSolver::realizablity(){
-    while(true){
-        //cout<<"interative"<<endl;
-        //dumpdot(W[cur], "W"+to_string(cur));
-        //dumpdot(Wprime[cur], "Wprme"+to_string(cur));
-        BDD tmp = W[cur] + univsyn();
-        W.push_back(tmp);
-        cur++;
-        //dumpdot(W[cur], "W"+to_string(cur));
-	Wprime.push_back(existsyn());
-        if(fixpoint())
-            break;
-	//        Wprime.push_back(existsyn());
-        //assert(cur = (W.size() - 1));
+my::optional<unordered_map<unsigned int, BDD>> DFAGameSolver::realizablity(
+    const DFA& dfa){
+    vector<BDD> master_plan(1, dfa.finalstatesBDD);
+    vector<BDD> winning_states(1, dfa.finalstatesBDD);
+    
+    do {
+	BDD new_plan = master_plan.back() + univsyn(winning_states.back(), dfa);
+	master_plan.push_back(new_plan);
+
+	BDD new_winning = existsyn(master_plan.back(), dfa);
+	winning_states.push_back(new_winning);
     }
-    if(Wprime[cur-1].Eval(bdd->initbv.data()).IsOne()){
+    while (!reached_fixpoint(winning_states));
+
+    vector<int> initial_state = dfa.initbv;
+    
+    if(winning_states.back().Eval(initial_state.data()).IsOne()){
         BDD O = mgr->bddOne();
-	//        vector<BDD> S2O;
-        for(int i = 0; i < bdd->output.size(); i++){
-            //cout<<bdd->output[i]<<endl;
-            O *= bdd->bddvars[bdd->output[i]];
+
+        for(int i = 0; i < dfa.output.size(); i++){
+
+            O *= dfa.bddvars[dfa.output[i]];
         }
-	/*
-        O *= bdd->bddvars[bdd->nbits];
-        //naive synthesis
-        BDD cons = W[cur].SolveEqn(O, S2O, &yindex, bdd->output.size());
-        strategy(S2O);
-	*/
 	
         InputFirstSynthesis IFsyn(*mgr);
 
-	return IFsyn.synthesize(W[cur], O);
+	return IFsyn.synthesize(master_plan.back(), O);
     }
-    std::cout<<"unrealizable, winning set: "<<std::endl;
-    std::cout<<Wprime[Wprime.size()-1]<<std::endl;
-    assert(false);
+
+    std::cout << "unrealizable, winning set: " << std::endl;
+    std::cout << winning_states.back() << std::endl;
+
     return my::nullopt;
 }
 
-my::optional<unordered_map<unsigned int, BDD>> DFAGameSolver::realizablity_variant(){
+my::optional<unordered_map<unsigned int, BDD>> DFAGameSolver::realizablity_variant(const DFA& dfa){
     BDD transducer;
+    vector<BDD> master_plan(1, dfa.finalstatesBDD);
+    vector<BDD> winning_states(1, dfa.finalstatesBDD);
+    vector<int> initial_state = dfa.initbv;
+    
     while(true){
         int index;
         BDD O = mgr->bddOne();
-        for(int i = 0; i < bdd->output.size(); i++){
-            index = bdd->output[i];
-            O *= bdd->bddvars[index];
+        for(int i = 0; i < dfa.output.size(); i++){
+            index = dfa.output[i];
+            O *= dfa.bddvars[index];
         }
 
-        BDD tmp = W[cur] + existsyn_invariant(O, transducer);
-        W.push_back(tmp);
-        cur++;
-        if(fixpoint())
+	BDD new_plan = existsyn_invariant(O, transducer,
+					  winning_states.back(), dfa);
+	master_plan.push_back(new_plan);
+
+        if(reached_fixpoint(winning_states))
             break;
 
         BDD I = mgr->bddOne();
-        for(int i = 0; i < bdd->input.size(); i++){
-            index = bdd->input[i];
-            I *= bdd->bddvars[index];
+        for(int i = 0; i < dfa.input.size(); i++){
+            index = dfa.input[i];
+            I *= dfa.bddvars[index];
         }
 
-        Wprime.push_back(univsyn_invariant(I));
-        if((Wprime[cur].Eval(bdd->initbv.data())).IsOne()){
+        winning_states.push_back(univsyn_invariant(I, winning_states.back()));
+
+        if((winning_states.back().Eval(initial_state.data())).IsOne()){
             return unordered_map<unsigned int, BDD>();
         }
 
     }
-    if((Wprime[cur-1].Eval(bdd->initbv.data())).IsOne()){
+
+    if((winning_states.back().Eval(initial_state.data())).IsOne()){
       // TODO: use ifstrategysynthesis
         BDD O = mgr->bddOne();
 	vector<BDD> S2O;
-        for(int i = 0; i < bdd->output.size(); i++){
-            O *= bdd->bddvars[bdd->output[i]];
+        for(int i = 0; i < dfa.output.size(); i++){
+            O *= dfa.bddvars[dfa.output[i]];
         }
-        O *= bdd->bddvars[bdd->nbits];
+        O *= dfa.bddvars[dfa.nbits];
         //naive synthesis
-        transducer.SolveEqn(O, S2O, outindex(), bdd->output.size());
-        strategy(S2O);
+	int* outindex;
+        transducer.SolveEqn(O, S2O, &outindex, dfa.output.size());
+        strategy(S2O, dfa);
 
         return unordered_map<unsigned int, BDD>();
     }
@@ -187,112 +159,107 @@ my::optional<unordered_map<unsigned int, BDD>> DFAGameSolver::realizablity_varia
 }
 
 
-void DFAGameSolver::strategy(vector<BDD>& S2O){
+void DFAGameSolver::strategy(vector<BDD>& S2O, const DFA& dfa){
     vector<BDD> winning;
     for(int i = 0; i < S2O.size(); i++){
-        //dumpdot(S2O[i], "S2O"+to_string(i));
-        for(int j = 0; j < bdd->output.size(); j++){
-            int index = bdd->output[j];
-            S2O[i] = S2O[i].Compose(bdd->bddvars[index], mgr->bddOne());
+
+        for(int j = 0; j < dfa.output.size(); j++){
+            int index = dfa.output[j];
+            S2O[i] = S2O[i].Compose(dfa.bddvars[index], mgr->bddOne());
         }
     }
 }
 
-int** DFAGameSolver::outindex(){
-    int outlength = bdd->output.size();
+vector<vector<int>> DFAGameSolver::outindex(const DFA& dfa){
+    int outlength = dfa.output.size();
     int outwidth = 2;
-    int **out = 0;
-    out = new int*[outlength];
+    vector<vector<int>> out(outlength, vector<int>(outwidth));
+
     for(int l = 0; l < outlength; l++){
-        out[l] = new int[outwidth];
         out[l][0] = l;
-        out[l][1] = bdd->output[l];
+        out[l][1] = dfa.output[l];
     }
     return out;
 }
 
-int* DFAGameSolver::state2bit(int n){
-    int* s = new int[bdd->nbits];
-    for (int i=bdd->nbits-1; i>=0; i--){
+vector<int> DFAGameSolver::state2bit(int n, const DFA& dfa){
+    vector<int> s(dfa.nbits);
+    for (int i=dfa.nbits-1; i>=0; i--){
       s[i] = n%2;
       n = n/2;
     }
     return s;
 }
 
-
-BDD DFAGameSolver::univsyn(){
+BDD DFAGameSolver::univsyn(const BDD& winning_states, const DFA& dfa){
     BDD I = mgr->bddOne();
-    BDD tmp = Wprime[cur];
+    BDD tmp = winning_states;
     int index;
-    int offset = bdd->nbits + bdd->nvars;
-    for(int i = 0; i < bdd->input.size(); i++){
-        index = bdd->input[i];
-        I *= bdd->bddvars[index];
+    int offset = dfa.nbits + dfa.nvars;
+    for(int i = 0; i < dfa.input.size(); i++){
+        index = dfa.input[i];
+        I *= dfa.bddvars[index];
     }
-    //dumpdot(I, "W00");
-    tmp = prime(tmp);
-    //dumpdot(tmp, "s-s'"+to_string(cur));
-    for(int i = 0; i < bdd->nbits; i++){
-        tmp = tmp.Compose(bdd->res[i], offset+i);
-        //dumpdot(tmp, "s.compose'"+to_string(i));
-    }
-    //dumpdot(tmp, "W00");
 
-    tmp *= !Wprime[cur];
+    tmp = prime(tmp, dfa);
+
+    for(int i = 0; i < dfa.nbits; i++){
+        tmp = tmp.Compose(dfa.res[i], offset+i);
+    }
+
+    tmp *= !winning_states;
 
     BDD eliminput = tmp.UnivAbstract(I);
-    //dumpdot(eliminput, "W01");
-    //dumpdot(eliminput, "EU"+to_string(cur));
-    return eliminput;
 
+    return eliminput;
 }
 
-BDD DFAGameSolver::existsyn_invariant(BDD exist, BDD& transducer){
-    BDD tmp = Wprime[cur];
-    int offset = bdd->nbits + bdd->nvars;
+BDD DFAGameSolver::existsyn_invariant(const BDD& exist,
+				      BDD& transducer,
+				      const BDD& winning_states,
+				      const DFA& dfa){
+    BDD tmp = winning_states;
+    int offset = dfa.nbits + dfa.nvars;
 
-    //dumpdot(I, "W00");
-    tmp = prime(tmp);
-    for(int i = 0; i < bdd->nbits; i++){
-        tmp = tmp.Compose(bdd->res[i], offset+i);
+    tmp = prime(tmp, dfa);
+    for(int i = 0; i < dfa.nbits; i++){
+        tmp = tmp.Compose(dfa.res[i], offset+i);
     }
     transducer = tmp;
-    tmp *= !Wprime[cur];
+    tmp *= !winning_states;
     BDD elimoutput = tmp.ExistAbstract(exist);
     return elimoutput;
-
 }
 
-BDD DFAGameSolver::univsyn_invariant(BDD univ){
+BDD DFAGameSolver::univsyn_invariant(const BDD& univ,
+				     const BDD& winning_states){
 
-    BDD tmp = W[cur];
+    BDD tmp = winning_states;
     BDD elimuniv = tmp.UnivAbstract(univ);
     return elimuniv;
 
 }
 
-BDD DFAGameSolver::prime(BDD orign){
-    int offset = bdd->nbits + bdd->nvars;
+BDD DFAGameSolver::prime(const BDD& orign, const DFA& dfa){
+    int offset = dfa.nbits + dfa.nvars;
     BDD tmp = orign;
-    for(int i = 0; i < bdd->nbits; i++){
-        tmp = tmp.Compose(bdd->bddvars[i+offset], i);
+    for(int i = 0; i < dfa.nbits; i++){
+        tmp = tmp.Compose(dfa.bddvars[i+offset], i);
     }
     return tmp;
 }
 
-BDD DFAGameSolver::existsyn(){
+BDD DFAGameSolver::existsyn(const BDD& master_plan, const DFA& dfa){
     BDD O = mgr->bddOne();
-    BDD tmp = W[cur];
+    BDD tmp = master_plan;
     int index;
-    int offset = bdd->nbits + bdd->nvars;
-    for(int i = 0; i < bdd->output.size(); i++){
-        index = bdd->output[i];
-        O *= bdd->bddvars[index];
+    int offset = dfa.nbits + dfa.nvars;
+    for(int i = 0; i < dfa.output.size(); i++){
+        index = dfa.output[i];
+        O *= dfa.bddvars[index];
     }
     BDD elimoutput = tmp.ExistAbstract(O);
     return elimoutput;
-
 }
 
 void DFAGameSolver::dumpdot(BDD &b, string filename){
@@ -302,21 +269,3 @@ void DFAGameSolver::dumpdot(BDD &b, string filename){
 	this->mgr->DumpDot(single, NULL, NULL, fp);
 	fclose(fp);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

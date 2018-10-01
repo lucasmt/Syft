@@ -87,10 +87,12 @@ int main(int argc, char ** argv){
         partfile = argv[2];
     }
     shared_ptr<Cudd> mgr = make_shared<Cudd>();
-    DFAGameSolver test(mgr, filename, partfile);
+    DFA dfa(mgr);
+    dfa.initialize(filename, partfile);
+    DFAGameSolver test(mgr);
 
     std::clock_t begint = std::clock();
-    my::optional<std::unordered_map<unsigned, BDD>> S2O = test.realizablity();
+    my::optional<std::unordered_map<unsigned, BDD>> S2O = test.realizablity(dfa);
     double time = double(std::clock()-begint) / CLOCKS_PER_SEC;
 
     if(S2O != my::nullopt){
@@ -99,7 +101,7 @@ int main(int argc, char ** argv){
 	  std::cout<<pair.first<<": ";
 	  test.printBDDSat(pair.second);
 	  }*/
-      playGame(*(test.bdd), *S2O);
+      playGame(dfa, *S2O);
     }
     else
       cout<<"unrealizable, time = "<<time<<endl;

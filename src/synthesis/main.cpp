@@ -27,14 +27,23 @@ int main(int argc, char ** argv){
         flag = argv[3];
     }
     shared_ptr<Cudd> mgr = make_shared<Cudd>();
-    DFAGameSolver test(move(mgr), filename, partfile);
+    DFA dfa(mgr);
+    dfa.initialize(filename, partfile);
+    dfa.bdd2dot();
+    
+    for(int i = 0; i < dfa.nbits; i++){
+	BDD b = mgr->bddVar();
+	dfa.bddvars.push_back(b);
+    }
+    
+    DFAGameSolver test(mgr);
     
     my::optional<unordered_map<unsigned, BDD>> strategy;
     
     //if(flag == "1")
     //    strategy = test.realizablity_variant();
     //else
-        strategy = test.realizablity();
+        strategy = test.realizablity(dfa);
 
     if(strategy != my::nullopt)
         cout<<"realizable"<<endl;
