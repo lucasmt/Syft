@@ -4,6 +4,7 @@
 
 #include "optional.h"
 #include "DFAGameSolver.h"
+#include "DFALoader.h"
 
 using std::string;
 using std::shared_ptr;
@@ -27,14 +28,8 @@ int main(int argc, char ** argv){
         flag = argv[3];
     }
     shared_ptr<Cudd> mgr = make_shared<Cudd>();
-    DFA dfa(mgr);
-    dfa.initialize(filename, partfile);
-    dfa.bdd2dot();
-    
-    for(int i = 0; i < dfa.nbits; i++){
-	BDD b = mgr->bddVar();
-	dfa.bddvars.push_back(b);
-    }
+    DFALoader loader(mgr);
+    DFA dfa = loader.run(filename, partfile);
     
     DFAGameSolver test(mgr);
     
