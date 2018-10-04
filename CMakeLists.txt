@@ -13,6 +13,8 @@ set( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin )
 set( CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib )
   
 find_package(cudd REQUIRED)
+Find_package(jet REQUIRED)
+find_package(rsynth REQUIRED)
 find_package(BISON REQUIRED)
 find_package(FLEX REQUIRED)
 
