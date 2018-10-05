@@ -3,16 +3,21 @@
 #include <memory>
 
 using std::move;
+using std::vector;
 
-DFA::DFA(OldDFA old)
+DFA::DFA(size_t nb,
+         DFAArgs args,
+         DFABDDs bdds,
+         vector<int> initbv,
+         IOPartition part)
 {
-  nbits = old.nbits;
-  nvars = old.nvars;
-  nstates = old.nstates;
-  bddvars = move(old.bddvars);
-  initbv = move(old.initbv);
-  input = move(old.input);
-  output = move(old.output);
-  res = move(old.res);
-  finalstatesBDD = move(finalstatesBDD);
+  nbits = nb;
+  nvars = args.nvars;
+  nstates = args.nstates;
+  bddvars = move(bdds.bddvars);
+  initbv = move(initbv);
+  input = move(part.input);
+  output = move(part.output);
+  res = move(bdds.res);
+  finalstatesBDD = move(bdds.finalstatesBDD);
 }
