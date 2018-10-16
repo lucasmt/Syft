@@ -1,4 +1,4 @@
-#include "DFA.h"
+#include "SymbolicDFA.h"
 
 /*
 #include <memory>

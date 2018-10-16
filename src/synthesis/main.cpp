@@ -5,6 +5,8 @@
 #include "optional.h"
 #include "DFAGameSolver.h"
 #include "DFALoader.h"
+#include "SymbolicDFA.h"
+#include "SymbolicDFAConverter.h"
 
 using std::string;
 using std::shared_ptr;
@@ -27,18 +29,18 @@ int main(int argc, char ** argv){
         partfile = argv[2];
         flag = argv[3];
     }
+    DFA dfa = DFALoader().run(filename, partfile);
     shared_ptr<Cudd> mgr = make_shared<Cudd>();
-    DFALoader loader(mgr);
-    DFA dfa = loader.run(filename, partfile);
+    SymbolicDFA symbolic_dfa = SymbolicDFAConverter(mgr).run(dfa);
     
-    DFAGameSolver test(mgr);
+    DFAGameSolver solver(mgr);
     
     my::optional<unordered_map<unsigned, BDD>> strategy;
     
     //if(flag == "1")
     //    strategy = test.realizablity_variant();
     //else
-        strategy = test.realizablity(dfa);
+        strategy = solver.realizablity(symbolic_dfa);
 
     if(strategy != my::nullopt)
         cout<<"realizable"<<endl;
