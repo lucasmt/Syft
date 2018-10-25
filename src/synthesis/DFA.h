@@ -1,9 +1,9 @@
 #ifndef DFA_H
 #define DFA_H
 
-#include "unordered_set"
-
-#include "cuddObj.hh"
+#include <memory>
+#include <unordered_set>
+#include <vector>
 
 struct IOPartition
 {

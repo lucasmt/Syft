@@ -10,7 +10,7 @@ using std::unique_ptr;
 using std::make_unique;
 using std::move;
 
-DFAGameSolver::DFAGameSolver(shared_ptr<Cudd> m)
+DFAGameSolver::DFAGameSolver(shared_ptr<BDDMgr> m)
     : mgr(move(m))
 {}
 
@@ -93,7 +93,7 @@ my::optional<unordered_map<unsigned int, BDD>> DFAGameSolver::realizablity(
             O *= dfa.bdd_vars[dfa.output_indices[i]];
         }
 	
-        InputFirstSynthesis IFsyn(*mgr);
+        InputFirstSynthesis IFsyn(mgr->cuddMgr());
 
 	return IFsyn.synthesize(master_plan.back(), O);
     }
@@ -262,6 +262,7 @@ BDD DFAGameSolver::existsyn(const BDD& master_plan, const SymbolicDFA& dfa){
     return elimoutput;
 }
 
+/*
 void DFAGameSolver::dumpdot(BDD &b, string filename){
     FILE *fp = fopen(filename.c_str(), "w");
     vector<BDD> single(1);
@@ -269,3 +270,4 @@ void DFAGameSolver::dumpdot(BDD &b, string filename){
 	this->mgr->DumpDot(single, NULL, NULL, fp);
 	fclose(fp);
 }
+*/

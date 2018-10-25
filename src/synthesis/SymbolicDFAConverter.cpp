@@ -4,6 +4,8 @@
 
 #include <boost/algorithm/string.hpp>
 
+#include "BDDMgr.hpp"
+
 using std::cout;
 using std::endl;
 using std::move;
@@ -11,7 +13,7 @@ using std::shared_ptr;
 using std::string;
 using std::vector;
 
-SymbolicDFAConverter::SymbolicDFAConverter(shared_ptr<Cudd> m)
+SymbolicDFAConverter::SymbolicDFAConverter(shared_ptr<BDDMgr> m)
   : mgr(move(m))
 {}
 
@@ -45,8 +47,10 @@ SymbolicDFA SymbolicDFAConverter::run(const DFA& dfa)
   construct_bdd_new(symbolic_dfa, dfa);
   
   // Primed state variables?
-  for(int i = 0; i < symbolic_dfa.number_of_bits; i++){
-    BDD b = mgr->bddVar();
+  size_t initial_id = symbolic_dfa.number_of_bits + dfa.number_of_vars;
+  for(size_t i = 0; i < symbolic_dfa.number_of_bits; i++){
+    jet::Attr var(initial_id + i);
+    BDD b = mgr->bddOfVar(var);
     symbolic_dfa.bdd_vars.push_back(b);
   }
 
@@ -73,12 +77,14 @@ string SymbolicDFAConverter::state2bin(int n) const {
 void SymbolicDFAConverter::construct_bdd_new(SymbolicDFA& symbolic_dfa,
                                              const DFA& dfa) const {
   for(size_t i = 0; i < symbolic_dfa.number_of_bits+dfa.number_of_vars; i++){
-    BDD b = mgr->bddVar();
+    jet::Attr var(i);
+    BDD b = mgr->bddOfVar(var);
     symbolic_dfa.bdd_vars.push_back(b);
     //dumpdot(b, to_string(i));
   }
   
   for(size_t i = 0; i < symbolic_dfa.number_of_bits; i++){
+    jet::Attr var(i);
     BDD d = mgr->bddZero();
     symbolic_dfa.transition_function.push_back(d);
   }
@@ -106,7 +112,7 @@ void SymbolicDFAConverter::construct_bdd_new(SymbolicDFA& symbolic_dfa,
                                symbolic_dfa.bdd_vars);
       }
       tmp = tmp & tBDD[dfa.behaviour[j]][i];
-      
+
       symbolic_dfa.transition_function[i] |= tmp;
     }
   }
@@ -120,11 +126,13 @@ void SymbolicDFAConverter::construct_bdd_new(SymbolicDFA& symbolic_dfa,
   }
 }
   
-vector<BDD> SymbolicDFAConverter::try_get(size_t index,
-                               vector<vector<BDD>>& tBDD,
-                               const vector<vector<size_t>>& smtbdd,
-                               size_t nbits,
-                               const vector<BDD>& bddvars) const {
+vector<BDD> SymbolicDFAConverter::try_get(
+  size_t index,
+  vector<vector<BDD>>& tBDD,
+  const vector<vector<size_t>>& smtbdd,
+  size_t nbits,
+  const vector<BDD>& bdd_vars) const
+{
   if(tBDD[index].size() != 0)
     return tBDD[index];
   vector<BDD> b;
@@ -149,12 +157,12 @@ vector<BDD> SymbolicDFAConverter::try_get(size_t index,
     int rootindex = smtbdd[index][0];
     int leftindex = smtbdd[index][1];
     int rightindex = smtbdd[index][2];
-    BDD root = bddvars[rootindex+nbits];
+    BDD root = bdd_vars[rootindex+nbits];
     //dumpdot(root, "test");
-    vector<BDD> left = try_get(leftindex, tBDD, smtbdd, nbits, bddvars);
+    vector<BDD> left = try_get(leftindex, tBDD, smtbdd, nbits, bdd_vars);
     //for(int l = 0; l < left.size(); l++)
     // dumpdot(left[l], "left"+to_string(l));
-    vector<BDD> right = try_get(rightindex, tBDD, smtbdd, nbits, bddvars);
+    vector<BDD> right = try_get(rightindex, tBDD, smtbdd, nbits, bdd_vars);
     //for(int l = 0; l < left.size(); l++)
     // dumpdot(right[l], "right"+to_string(l));
     assert(left.size() == right.size());
@@ -169,30 +177,32 @@ vector<BDD> SymbolicDFAConverter::try_get(size_t index,
   }
 }
 
-BDD SymbolicDFAConverter::var2bddvar(int v, int index, const vector<BDD>& bddvars) const {
+BDD SymbolicDFAConverter::var2bddvar(int v,
+                                     int index,
+                                     const vector<BDD>& bdd_vars) const {
   if(v == 0){
-    return !bddvars[index];
+    return !bdd_vars[index];
   }
   else{
-    return bddvars[index];
+    return bdd_vars[index];
   }
 }
 
 BDD SymbolicDFAConverter::state2bdd(size_t s,
-                         size_t nbits,
-                         const vector<BDD>& bddvars) const {
+                                    size_t nbits,
+                                    const vector<BDD>& bdd_vars) const {
   string bin = state2bin(s);
   BDD b = mgr->bddOne();
   int nzero = nbits - bin.length();
   //cout<<nzero<<endl;
   for(int i = 0; i < nzero; i++){
-    b *= !bddvars[i];
+    b *= !bdd_vars[i];
   }
   for(int i = 0; i < bin.length(); i++){
     if(bin[i] == '0')
-      b *= !bddvars[i+nzero];
+      b *= !bdd_vars[i+nzero];
     else
-      b *= bddvars[i+nzero];
+      b *= bdd_vars[i+nzero];
   }
   return b;
 

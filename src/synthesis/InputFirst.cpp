@@ -3,9 +3,9 @@
 using std::vector;
 using std::unordered_map;
 
-InputFirstSynthesis::InputFirstSynthesis(Cudd mgr, bool defaultValue)
+InputFirstSynthesis::InputFirstSynthesis(Cudd& mgr, bool defaultValue)
+  : m(mgr)
 {
-	m = mgr;
 	defaultConstant = defaultValue ? m.bddOne() : m.bddZero();
 }
 

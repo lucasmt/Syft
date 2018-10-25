@@ -3,6 +3,8 @@
 
 #include <memory>
 
+#include <BDDMgr.hpp>
+
 #include "Common.h"
 #include "SymbolicDFA.h"
 #include "InputFirst.h"
@@ -11,7 +13,7 @@
 class DFAGameSolver
 {
 public:
-    DFAGameSolver(std::shared_ptr<Cudd> m);
+    DFAGameSolver(std::shared_ptr<BDDMgr> m);
 
     my::optional<std::unordered_map<unsigned int, BDD>> realizablity(
 	const SymbolicDFA& dfa);
@@ -24,7 +26,7 @@ public:
     void printBDDSat(const BDD& b, const SymbolicDFA& dfa);
 
 private:
-        std::shared_ptr<Cudd> mgr;
+        std::shared_ptr<BDDMgr> mgr;
     
         bool reached_fixpoint(const std::vector<BDD>& winning_states);
         std::string state2bin(int n);

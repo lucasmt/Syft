@@ -2,6 +2,8 @@
 #include <string>
 #include <memory>
 
+#include "BDDMgr.hpp"
+
 #include "optional.h"
 #include "DFAGameSolver.h"
 #include "DFALoader.h"
@@ -30,7 +32,15 @@ int main(int argc, char ** argv){
         flag = argv[3];
     }
     DFA dfa = DFALoader().run(filename, partfile);
-    shared_ptr<Cudd> mgr = make_shared<Cudd>();
+
+    size_t number_of_bits = 0;
+
+    for (size_t i = dfa.number_of_states - 1; i != 0; i >>= 1){
+      ++number_of_bits;
+    }
+
+    jet::AttrRanking varRanking(dfa.number_of_vars + number_of_bits * 2);
+    shared_ptr<BDDMgr> mgr = make_shared<BDDMgr>(varRanking);
     SymbolicDFA symbolic_dfa = SymbolicDFAConverter(mgr).run(dfa);
     
     DFAGameSolver solver(mgr);

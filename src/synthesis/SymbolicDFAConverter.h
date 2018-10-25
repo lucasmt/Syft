@@ -6,6 +6,8 @@
 
 #include "cuddObj.hh"
 
+#include "BDDMgr.hpp"
+
 #include "DFA.h"
 #include "SymbolicDFA.h"
 
@@ -13,13 +15,13 @@ class SymbolicDFAConverter
 {
 public:
 
-  SymbolicDFAConverter(std::shared_ptr<Cudd> m);
+  SymbolicDFAConverter(std::shared_ptr<BDDMgr> m);
   
   SymbolicDFA run(const DFA& dfa);
 
 private:
 
-  std::shared_ptr<Cudd> mgr;
+  std::shared_ptr<BDDMgr> mgr;
   //DFAArgs read_from_file(const std::string& filename) const;
   //bool strfind(const std::string& str, const std::string& target) const;
   std::string state2bin(int n) const;

@@ -38,3 +38,4 @@ include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(RSYNTH DEFAULT_MSG RSYNTH_LIBRARIES RSYNTH_INCLUDE_DIRS)
 
 mark_as_advanced(RSYNTH_ROOT RSYNTH_LIBRARIES RSYNTH_INCLUDE_DIRS)
+
