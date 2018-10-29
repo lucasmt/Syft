@@ -2,6 +2,9 @@
 
 #include <memory>
 
+#include "SkolemFunction.hpp"
+#include "SynthesisResult.hpp"
+
 using std::string;
 using std::unordered_map;
 using std::vector;
@@ -10,8 +13,10 @@ using std::unique_ptr;
 using std::make_unique;
 using std::move;
 
-DFAGameSolver::DFAGameSolver(shared_ptr<BDDMgr> m)
+DFAGameSolver::DFAGameSolver(shared_ptr<BDDMgr> m,
+                             BoolesMethod s)
     : mgr(move(m))
+    , synthesizer(move(s))
 {}
 
 DFAGameSolver::~DFAGameSolver()
@@ -57,7 +62,6 @@ bool DFAGameSolver::reached_fixpoint(const vector<BDD>& winning_states){
 }
 
 void DFAGameSolver::printBDDSat(const BDD& b, const SymbolicDFA& dfa){
-
   std::cout<<"sat with: ";
   int max = dfa.number_of_states;
   
@@ -69,6 +73,41 @@ void DFAGameSolver::printBDDSat(const BDD& b, const SymbolicDFA& dfa){
   std::cout<<std::endl;
 }
 
+bool DFAGameSolver::realizablity(const SymbolicDFA& dfa){
+
+  vector<SkolemFunction> strategy(1, mgr->bddOne());
+  vector<BDD> winning_states(1, dfa.accepting_states());
+    
+  do {
+    SynthesisResult result =
+      one_step_synthesis(dfa, prime(winning_states.back()));
+        
+    BDD new_winning = for_all(dfa.env_vars(), result.precondition);
+    winning_states.push_back(new_winning);
+    strategy.push_back(result.skolemFunction);
+  }
+  while (!reached_fixpoint(winning_states));
+
+  Assignment initial_state = dfa.initial_assignment();
+    
+  return mgr->eval(winning_states.back(), initial_assignment);
+}
+
+BDD DFAGameSolver::for_all(const jet::AttrSet& vars, const BDD& b){
+  BDD cube = mgr->cubeOfVars(vars);
+
+  return b.UnivAbstract(cube);
+}
+
+BDD DFAGameSolver::one_step_synthesis(const SymbolicDFA& dfa,
+                                      const BDD& next_winning_states){
+  BDD transition = dfa.transition_relation();
+  jet::AttrSet output_vars = dfa.output_vars();
+    
+  return synthesizer->run(transition & next_winning_states, output_vars);
+}
+
+/*
 my::optional<unordered_map<unsigned int, BDD>> DFAGameSolver::realizablity(
     const SymbolicDFA& dfa){
     vector<BDD> master_plan(1, dfa.final_states);
@@ -170,6 +209,7 @@ void DFAGameSolver::strategy(vector<BDD>& S2O, const SymbolicDFA& dfa){
     }
 }
 
+
 vector<vector<int>> DFAGameSolver::outindex(const SymbolicDFA& dfa){
     int outlength = dfa.output_indices.size();
     int outwidth = 2;
@@ -262,7 +302,6 @@ BDD DFAGameSolver::existsyn(const BDD& master_plan, const SymbolicDFA& dfa){
     return elimoutput;
 }
 
-/*
 void DFAGameSolver::dumpdot(BDD &b, string filename){
     FILE *fp = fopen(filename.c_str(), "w");
     vector<BDD> single(1);

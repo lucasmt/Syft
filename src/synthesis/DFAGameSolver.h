@@ -15,11 +15,10 @@ class DFAGameSolver
 public:
     DFAGameSolver(std::shared_ptr<BDDMgr> m);
 
-    my::optional<std::unordered_map<unsigned int, BDD>> realizablity(
-	const SymbolicDFA& dfa);
+    bool realizablity(const SymbolicDFA& dfa);
 	
-    my::optional<std::unordered_map<unsigned int, BDD>> realizablity_variant(
-	const SymbolicDFA& dfa);
+    /*my::optional<std::unordered_map<unsigned int, BDD>> realizablity_variant(
+      const SymbolicDFA& dfa);*/
 	
     virtual ~DFAGameSolver();
 

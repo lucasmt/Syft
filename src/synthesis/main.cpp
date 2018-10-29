@@ -18,6 +18,24 @@ using std::cout;
 using std::endl;
 using std::unordered_map;
 
+jet::AttrRanking compute_var_ranking(const DFA& dfa)
+{
+    size_t number_of_bits = 0;
+
+    for (size_t i = dfa.number_of_states - 1; i != 0; i >>= 1){
+      ++number_of_bits;
+    }
+
+    return jet::AttrRanking(dfa.number_of_vars + number_of_bits * 2);  
+}
+
+jet::AttrSet vars_to_project(const SymbolicDFA& dfa)
+{
+  vector<jet::Attr> vars;
+
+  for
+}
+
 int main(int argc, char ** argv){
     string filename;
     string partfile;
@@ -33,26 +51,24 @@ int main(int argc, char ** argv){
     }
     DFA dfa = DFALoader().run(filename, partfile);
 
-    size_t number_of_bits = 0;
-
-    for (size_t i = dfa.number_of_states - 1; i != 0; i >>= 1){
-      ++number_of_bits;
-    }
-
-    jet::AttrRanking varRanking(dfa.number_of_vars + number_of_bits * 2);
-    shared_ptr<BDDMgr> mgr = make_shared<BDDMgr>(varRanking);
+    shared_ptr<BDDMgr> mgr = make_shared<BDDMgr>(compute_var_ranking(dfa));
     SymbolicDFA symbolic_dfa = SymbolicDFAConverter(mgr).run(dfa);
+
+    std::unique_ptr<jet::JoinAlgorithm> joinAlgorithm =
+      make_unique<MonolithicJoin>(symbolic_dfa.output_vars());
+    FactoredSynthesizer synthesizer(mgr, joinAlgorithm);
+    DFAGameSolver solver(mgr, synthesizer);
     
-    DFAGameSolver solver(mgr);
-    
-    my::optional<unordered_map<unsigned, BDD>> strategy;
+    //my::optional<unordered_map<unsigned, BDD>> strategy;
     
     //if(flag == "1")
     //    strategy = test.realizablity_variant();
     //else
-        strategy = solver.realizablity(symbolic_dfa);
+    //    strategy = solver.realizablity(symbolic_dfa);
 
-    if(strategy != my::nullopt)
+    bool realizable = solver.realizability(symbolic_dfa);
+    
+    if(realizable)
         cout<<"realizable"<<endl;
     else
         cout<<"unrealizable"<<endl;

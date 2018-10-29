@@ -5,6 +5,17 @@
 
 class SymbolicDFA
 {
+  jet::AttrSet env_vars;
+  jet::AttrSet sys_vars;
+  jet::AttrSet state_vars;
+  jet::AttrSet next_state_vars;
+
+  Assignment initial_assignment;
+
+  BDD transition_relation;
+
+  BDD accepting_states;
+  
 public:
   
   size_t number_of_bits;

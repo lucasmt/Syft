@@ -19,6 +19,19 @@ SymbolicDFAConverter::SymbolicDFAConverter(shared_ptr<BDDMgr> m)
 
 SymbolicDFA SymbolicDFAConverter::run(const DFA& dfa)
 {
+  jet::AttrSet env_vars = ?;
+  jet::AttrSet sys_vars = ?;
+  jet::AttrSet state_vars = ?;
+  jet::AttrSet next_state_vars = ?;
+
+  Assignment initial_assignment = state_to_assignment(dfa.initial_state);
+
+  BDD transition_relation = construct_bdd_new(dfa);
+
+  BDD accepting_states = ?;
+  
+  //
+  
   SymbolicDFA symbolic_dfa;
   symbolic_dfa.number_of_vars = dfa.number_of_vars;
   symbolic_dfa.number_of_states = dfa.number_of_states;
