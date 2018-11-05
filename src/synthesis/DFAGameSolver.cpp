@@ -22,6 +22,7 @@ DFAGameSolver::DFAGameSolver(shared_ptr<BDDMgr> m,
 DFAGameSolver::~DFAGameSolver()
 {}
 
+/*
 BDD DFAGameSolver::state2bdd(int s, const SymbolicDFA& dfa){
     string bin = state2bin(s);
     BDD b = mgr->bddOne();
@@ -54,6 +55,7 @@ string DFAGameSolver::state2bin(int n){
         reverse(res.begin(), res.end());
    return res;
 }
+*/
 
 bool DFAGameSolver::reached_fixpoint(const vector<BDD>& winning_states){
     size_t last = winning_states.size() - 1;
@@ -61,6 +63,7 @@ bool DFAGameSolver::reached_fixpoint(const vector<BDD>& winning_states){
     return winning_states[last] == winning_states[last - 1];
 }
 
+/*
 void DFAGameSolver::printBDDSat(const BDD& b, const SymbolicDFA& dfa){
   std::cout<<"sat with: ";
   int max = dfa.number_of_states;
@@ -72,10 +75,26 @@ void DFAGameSolver::printBDDSat(const BDD& b, const SymbolicDFA& dfa){
   }
   std::cout<<std::endl;
 }
+*/
+
+BDD prime(const BDD& states)
+{
+  BDD primed_states = states;
+  
+  for (unsigned int index : states.SupportIndices())
+  {
+    jet::Attr var = _bdd_dict.varAtIndex(index);
+    jet::Attr primed_var = _state_map.prime(var);
+    BDD bdd_var = _bdd_dict.bddOfVar(primed_var);
+    primed_states = primed_states.Compose(bdd_var, index);
+  }
+
+  return primed_states;
+}
 
 bool DFAGameSolver::realizablity(const SymbolicDFA& dfa){
 
-  vector<SkolemFunction> strategy(1, mgr->bddOne());
+  vector<SkolemFunction> strategy;
   vector<BDD> winning_states(1, dfa.accepting_states());
     
   do {
@@ -90,11 +109,11 @@ bool DFAGameSolver::realizablity(const SymbolicDFA& dfa){
 
   Assignment initial_state = dfa.initial_assignment();
     
-  return mgr->eval(winning_states.back(), initial_assignment);
+  return mgr->eval(winning_states.back(), initial_state);
 }
 
 BDD DFAGameSolver::for_all(const jet::AttrSet& vars, const BDD& b){
-  BDD cube = mgr->cubeOfVars(vars);
+  BDD cube = _bdd_dict->cubeOfVars(vars);
 
   return b.UnivAbstract(cube);
 }

@@ -15,13 +15,14 @@ class SymbolicDFAConverter
 {
 public:
 
-  SymbolicDFAConverter(std::shared_ptr<BDDMgr> m);
+  SymbolicDFAConverter(const StateMap& state_map, const BDDDict& bdd_dict);
   
   SymbolicDFA run(const DFA& dfa);
 
 private:
 
-  std::shared_ptr<BDDMgr> mgr;
+  const StateMap& _state_map;
+  const BDDDict& _bdd_dict;
   //DFAArgs read_from_file(const std::string& filename) const;
   //bool strfind(const std::string& str, const std::string& target) const;
   std::string state2bin(int n) const;

@@ -14,89 +14,88 @@ using boost::algorithm::split;
 using std::string;
 using std::vector;
 
-DFA DFALoader::run(const string& filename, const string& partfile)
+DFALoader::DFALoader(VarPartition partition)
+  : _partition(partition)
+{}
+
+DFA DFALoader::run(const string& base_filename, size_t index) const
 {
-  DFA dfa = read_from_file(filename);
-  dfa.partition = read_partfile(partfile);
-
-  return dfa;
-}
-
-DFA DFALoader::read_from_file(const string& filename) const {
-  ifstream f(filename);
+  string full_filename = base_filename + index + ".dfa";
+  ifstream f(full_filename);
   DFA dfa;
+
+  if (!f.is_open())
+    throw runtime_error("Unable to open file: " + full_filename);
+
+  string line;
+  vector<string> fields; //temporary varibale
+
+  vector<string> var_names;
+  size_t number_of_states;
+  size_t initial_state;
+  vector<size_t> accepting_states;
+  vector<size_t> behavior;
+  vector<SMTBDDNode> nodes;
   
-  if(f.is_open()){
-    bool flag = 0;
-    string line;
-    vector<size_t> tmp;
-    vector<string> fields; //temporary varibale
-
-    while(getline(f, line)){
-      if(flag == 0){
-        if(strfind(line, "number of variables")){
-          split(fields, line, is_any_of(" "));
-          dfa.number_of_vars = stoi(fields[3]);
-          //cout<<nvars<<endl;
-        }
-        if(strfind(line, "variables") && !strfind(line, "number")){
-          split(dfa.var_names, line, is_any_of(" "));
-
-        }
-        else if(strfind(line, "states")){
-          split(fields, line, is_any_of(" "));
-          dfa.number_of_states = stoi(fields[1]);
-          // cout<<nstates<<endl;
-        }
-        else if(strfind(line, "initial")){
-          split(fields, line, is_any_of(" "));
-          dfa.initial_state = stoi(fields[1]);
-          //cout<<init<<endl;
-        }
-        else if(strfind(line, "bdd nodes")){
-          split(fields, line, is_any_of(" "));
-          dfa.number_of_nodes = stoi(fields[2]);
-          //cout<<nodes<<endl;
-        }
-        else if(strfind(line, "final")){
-          split(fields, line, is_any_of(" "));
-          int i = 1; // start at 1 to ignore "final" token
-          while(i < fields.size()){
-            if(fields[i] == "1")
-              dfa.final_states.push_back(i-1);
-            i = i + 1;
-          }
-          //print_int(finalstates);
-        }
-        else if(strfind(line, "behaviour")){
-          split(fields, line, is_any_of(" "));
-          int i = 1;
-          while(i < fields.size()){
-            dfa.behaviour.push_back(stoi(fields[i]));
-            i = i + 1;
-          }
-          //print_int(behaviour);
-        }
-        else if(strfind(line, "bdd:"))
-          flag = 1;
-        else
-          continue;
-      }
-      else{
-        if(strfind(line, "end"))
-          break;
-        split(fields, line, is_any_of(" "));
-        for(int i = 1; i < fields.size(); i++)
-          tmp.push_back(stoi(fields[i]));
-        dfa.smtbdd.push_back(tmp);
-        tmp.clear();
+  while(getline(f, line)){
+    if(strfind(line, "number of variables")){
+      split(fields, line, is_any_of(" "));
+      size_t number_of_vars = stoi(fields[3]);
+    }
+    else if(strfind(line, "variables")){
+      split(var_names, line, is_any_of(" "));
+    }
+    else if(strfind(line, "states")){
+      split(fields, line, is_any_of(" "));
+      number_of_states = stoi(fields[1]);
+    }
+    else if(strfind(line, "initial")){
+      split(fields, line, is_any_of(" "));
+      initial_state = stoi(fields[1]);
+    }
+    else if(strfind(line, "bdd nodes")){
+      split(fields, line, is_any_of(" "));
+      nodes.reserve(stoi(fields[2]));
+    }
+    else if(strfind(line, "final")){
+      split(fields, line, is_any_of(" "));
+      int i = 1; // start at 1 to ignore "final" token
+      while(i < fields.size()){
+	if(fields[i] == "1")
+	  accepting_states.push_back(i-1);
+	++i;
       }
     }
+    else if(strfind(line, "behaviour")){
+      split(fields, line, is_any_of(" "));
+      int i = 1;
+      while(i < fields.size()){
+	behaviour.push_back(stoi(fields[i]));
+	++i;
+      }
+    }
+    else if(strfind(line, "bdd:")) {
 
+      while (!strfind(line, "end")) {
+	split(fields, line, is_any_of(" "));
+
+	// starts at 1 because of leading whitespace?
+	SMTBDDNode node(stoi(fields[1]), stoi(fields[2]), stoi(fields[3]));
+	nodes.push_back(node);
+      }
+    }
   }
+
   f.close();
 
-  return dfa;
+  SMTBDD smtbdd(behavior, nodes);
+  
+  return DFA(index,
+	     number_of_states,
+	     partition,
+	     initial_state,
+	     transition_function,
+	     accepting_states);
 }
 
 bool DFALoader::strfind(const string& str, const string& target) const {
@@ -105,35 +104,4 @@ bool DFALoader::strfind(const string& str, const string& target) const {
     return true;
   else
     return false;
-}
-
-IOPartition DFALoader::read_partfile(const string& partfile) const {
-  ifstream f(partfile);
-  vector<string> inputs;
-  vector<string> outputs;
-  string line;
-  while(getline(f, line)){
-    if(f.is_open()){
-      if(strfind(line, "inputs")){
-        split(inputs, line, is_any_of(" "));
-      }
-      else if(strfind(line, "outputs")){
-        split(outputs, line, is_any_of(" "));
-      }
-      else{
-        cout<<"read partfile error!"<<endl;
-        cout<<partfile<<endl;
-        cout<<line<<endl;
-      }
-    }
-  }
-  f.close();
-
-  IOPartition part;
-  for(int i = 1; i < inputs.size(); i++)
-    part.input_vars.insert(inputs[i]);
-  for(int i = 1; i < outputs.size(); i++)
-    part.output_vars.insert(outputs[i]);
-
-  return part;
 }

@@ -18,61 +18,63 @@ using std::cout;
 using std::endl;
 using std::unordered_map;
 
-jet::AttrRanking compute_var_ranking(const DFA& dfa)
+BDDDict construct_vars(Cudd& mgr,
+		       const VarPartition& partition,
+		       const StateMap& state_map)
 {
-    size_t number_of_bits = 0;
-
-    for (size_t i = dfa.number_of_states - 1; i != 0; i >>= 1){
-      ++number_of_bits;
-    }
-
-    return jet::AttrRanking(dfa.number_of_vars + number_of_bits * 2);  
-}
-
-jet::AttrSet vars_to_project(const SymbolicDFA& dfa)
-{
-  vector<jet::Attr> vars;
-
-  for
+  
 }
 
 int main(int argc, char ** argv){
-    string filename;
-    string partfile;
-    string flag;
-    if(argc != 4){
-        cout<<"Usage: ./Syft DFAfile Partfile Starting_player(0: system, 1: environment)"<<endl;
-        return 0;
+
+  if(argc != 4){
+      cout << "Usage: ./syft "
+	   << "<base-filename> <number-of-files> <partition-file>"
+	   << endl;
+      return 0;
     }
-    else{
-        filename = argv[1];
-        partfile = argv[2];
-        flag = argv[3];
+
+    string base_filename = argv[1];
+    size_t k = atoi(argv[2]);
+    string partition_file = argv[3];
+
+    VarPartition partition = VarPartition::load(partition_file);
+    DFALoader loader(partition);
+
+    Cudd mgr;
+    BDDDict dict;
+
+    vector<DFA> dfas;
+    dfas.reserve(k);
+    
+    for (size_t i = 0; i < k; i++)
+    {
+      DFA dfa = loader.run(base_filename + i + ".dfa");
+      dfas.push_back(dfa);
     }
-    DFA dfa = DFALoader().run(filename, partfile);
 
-    shared_ptr<BDDMgr> mgr = make_shared<BDDMgr>(compute_var_ranking(dfa));
-    SymbolicDFA symbolic_dfa = SymbolicDFAConverter(mgr).run(dfa);
+    StateMap state_map(dfas, partition);
+    BDDDict bdd_dict = construct_vars(mgr, partition, state_map);
+    
+    SymbolicDFAConverter symbolic_converter(state_map, bdd_dict);
+    vector<SymbolicDFA> symbolic_dfas;
+    symbolic_dfas.reserve(k);
 
-    std::unique_ptr<jet::JoinAlgorithm> joinAlgorithm =
-      make_unique<MonolithicJoin>(symbolic_dfa.output_vars());
-    FactoredSynthesizer synthesizer(mgr, joinAlgorithm);
-    DFAGameSolver solver(mgr, synthesizer);
-    
-    //my::optional<unordered_map<unsigned, BDD>> strategy;
-    
-    //if(flag == "1")
-    //    strategy = test.realizablity_variant();
-    //else
-    //    strategy = solver.realizablity(symbolic_dfa);
+    for (size_t i = 0; i < k; i++)
+    {
+      SymbolicDFA symbolic_dfa = symbolic_converter.run(dfa);
+      symbolic_dfas.push_back(symbolic_dfa);
+    }
 
-    bool realizable = solver.realizability(symbolic_dfa);
+    jet::AttrRanking bucket_ranking = compute_bucket_ranking(symbolic_dfas);
+    unique_ptr<jet::JoinAlgorithm> join_algorithm =
+      make_unique<jet::BucketElimination>(bucket_ranking);
+    FactoredSynthesizer synthesizer(bdd_dict, join_algorithm);
+    DFAGameSolver solver(state_map, bdd_dict, synthesizer);
     
-    if(realizable)
-        cout<<"realizable"<<endl;
-    else
-        cout<<"unrealizable"<<endl;
+    bool realizable = solver.realizability(symbolic_dfas);
+
+    cout << (realizable ? "Realizable" : "Unrealizable") << endl;
+    
     return 0;
-
 }
-//solveeqn

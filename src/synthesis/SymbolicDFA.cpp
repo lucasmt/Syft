@@ -1,25 +1,122 @@
 #include "SymbolicDFA.h"
 
-/*
-#include <memory>
-
-using std::move;
-using std::vector;
-
-DFA::DFA(size_t nb,
-         DFAArgs args,
-         DFABDDs bdds,
-         vector<int> initbv,
-         IOPartition part)
+SymbolicDFA::SymbolicDFA(const DFA& dfa,
+			 const StateMap& state_map,
+			 const BDDDict& bdd_dict)
 {
-  nbits = nb;
-  nvars = args.nvars;
-  nstates = args.nstates;
-  bddvars = move(bdds.bddvars);
-  initbv = move(initbv);
-  input = move(part.input);
-  output = move(part.output);
-  res = move(bdds.res);
-  finalstatesBDD = move(bdds.finalstatesBDD);
+  env_vars = dfa.env_vars();
+  sys_vars = dfa.sys_vars();
+  state_vars = state_map.state_vars(dfa);
+  next_state_vars = state_map.next_state_vars(dfa);
+
+  initial_assignment = state_map.to_assignment(dfa.initial_state());
+
+  transition_relation = construct_bdd_new(dfa, state_map, bdd_dict);
+
+  accepting_states = bdd_dict.bddZero();
+
+  for (DFAState accepting_state : dfa.accepting_states())
+  {
+    Assignment accepting_assignment = state_map.to_assignment(accepting_state);
+    
+    jet::AttrSet assigned_to_true = accepting_assignment.assignedToTrue();
+    
+    accepting_states |= bdd_dict.cubeOfVars(assigned_to_true);
+  }
 }
-*/
+
+BDD SymbolicDFA::construct_bdd_new(const DFA& dfa,
+				   const StateMap& state_map,
+				   const BDDDict& bdd_dict) const {
+  return bdd_dict.bddZero();
+  /*
+  BDD transition_relation = bdd_dict.bddZero();
+
+  vector<vector<BDD>> tBDD(dfa.smtbdd.size());
+
+  for(size_t i = 0; i < tBDD.size(); i++){
+    if(tBDD[i].size() == 0){
+      vector<BDD> b = try_get(i, tBDD, dfa.smtbdd,
+			      symbolic_dfa.number_of_bits,
+			      symbolic_dfa.bdd_vars);
+    }
+  }
+
+  for (jet::Attr state_var : state_vars){
+    for (DFAState state : dfa.states()){
+      
+      BDD tmp = bdd_dict.bddOne();
+      
+  
+  for(size_t i = 0; i < symbolic_dfa.number_of_bits; i++){
+    for(size_t j = 0; j < dfa.number_of_states; j++){
+      BDD tmp = mgr->bddOne();
+      string bins = state2bin(j);
+      size_t offset = symbolic_dfa.number_of_bits - bins.size();
+      for(size_t m = 0; m < offset; m++){
+	tmp = tmp & var2bddvar(0, m, symbolic_dfa.bdd_vars);
+      }
+      for(size_t m = 0; m < bins.size(); m++){
+	tmp = tmp & var2bddvar(int(bins[m])-48, m + offset,
+			       symbolic_dfa.bdd_vars);
+      }
+      tmp = tmp & tBDD[dfa.behaviour[j]][i];
+
+      symbolic_dfa.transition_function[i] |= tmp;
+    }
+  }
+  */
+}
+
+vector<BDD> SymbolicDFAConverter::try_get(size_t index,
+					  vector<vector<BDD>>& tBDD,
+					  const vector<vector<size_t>>& smtbdd,
+					  size_t nbits,
+					  const vector<BDD>& bdd_vars) const
+{
+  return vector<BDD>();
+  /*
+  if(tBDD[index].size() != 0)
+    return tBDD[index];
+  vector<BDD> b;
+  if(smtbdd[index][0] == -1){
+    int s = smtbdd[index][1];
+    string bins = state2bin(s);
+    for(int m = 0; m < nbits - bins.size(); m++){
+      b.push_back(mgr->bddZero());
+    }
+    for(int i = 0; i < bins.size(); i++){
+      if(bins[i] == '0')
+	b.push_back(mgr->bddZero());
+      else if(bins[i] == '1')
+	b.push_back(mgr->bddOne());
+      else
+	cout<<"error binary state"<<endl;
+    }
+    tBDD[index] = b;
+    return b;
+  }
+  else{
+    int rootindex = smtbdd[index][0];
+    int leftindex = smtbdd[index][1];
+    int rightindex = smtbdd[index][2];
+    BDD root = bdd_vars[rootindex+nbits];
+    //dumpdot(root, "test");
+    vector<BDD> left = try_get(leftindex, tBDD, smtbdd, nbits, bdd_vars);
+    //for(int l = 0; l < left.size(); l++)
+    // dumpdot(left[l], "left"+to_string(l));
+    vector<BDD> right = try_get(rightindex, tBDD, smtbdd, nbits, bdd_vars);
+    //for(int l = 0; l < left.size(); l++)
+    // dumpdot(right[l], "right"+to_string(l));
+    assert(left.size() == right.size());
+    for(int i = 0; i < left.size(); i++){
+      BDD tmp;
+      tmp = root.Ite(right[i], left[i]);//Assume this is correct
+      //dumpdot(tmp, "tmp");
+      b.push_back(tmp);
+    }
+    tBDD[index] = b;
+    return b;
+  }
+  */
+}

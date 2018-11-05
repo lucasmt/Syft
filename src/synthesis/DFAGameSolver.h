@@ -13,7 +13,7 @@
 class DFAGameSolver
 {
 public:
-    DFAGameSolver(std::shared_ptr<BDDMgr> m);
+    DFAGameSolver(std::shared_ptr<BDDDict> m);
 
     bool realizablity(const SymbolicDFA& dfa);
 	

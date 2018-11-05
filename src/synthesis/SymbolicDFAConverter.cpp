@@ -17,18 +17,18 @@ SymbolicDFAConverter::SymbolicDFAConverter(shared_ptr<BDDMgr> m)
   : mgr(move(m))
 {}
 
-SymbolicDFA SymbolicDFAConverter::run(const DFA& dfa)
+SymbolicDFA SymbolicDFAConverter::run(const DFA& dfa, jet::AttrSet state_vars, Dict<jet::Attr, jet::Attr> to_primed)
 {
-  jet::AttrSet env_vars = ?;
-  jet::AttrSet sys_vars = ?;
-  jet::AttrSet state_vars = ?;
-  jet::AttrSet next_state_vars = ?;
+  symbolic_dfa.env_vars = dfa.env_vars;
+  symbolic_dfa.sys_vars = dfa.sys_vars;
+  symbolic_dfa.state_vars = state_vars;
+  symbolic_dfa.next_state_vars = to_primed.forward(state_vars);
 
-  Assignment initial_assignment = state_to_assignment(dfa.initial_state);
+  Assignment initial_assignment = state_to_assignment(dfa.initial_state, state_vars);
 
   BDD transition_relation = construct_bdd_new(dfa);
 
-  BDD accepting_states = ?;
+  BDD accepting_states = ;
   
   //
   
