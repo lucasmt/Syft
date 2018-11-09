@@ -12,9 +12,9 @@ class DFALoader
 {
 public:
 
-  DFALoader(VarPartition partition);
-  
-  DFA run(const std::string& filename);
+  DFA run(const std::string& base_filename,
+          size_t index,
+          const VarPartition& partition) const;
 
 private:
 

@@ -1,5 +1,10 @@
 #include <vector>
 
+#include "Attr.hpp"
+
+#include "Assignment.hpp"
+
+#include "DFA.h"
 #include "VarPartition.h"
 
 class StateMap
@@ -7,6 +12,11 @@ class StateMap
  public:
 
   StateMap(const std::vector<DFA>& dfas, const VarPartition& partition);
+
+  jet::Attr prime(jet::Attr state_var) const;
+  
+  jet::AttrSet state_vars() const;
+  jet::AttrSet next_state_vars() const;
 
   jet::AttrSet state_vars(const DFA& dfa) const;
   jet::AttrSet next_state_vars(const DFA& dfa) const;
@@ -22,5 +32,5 @@ class StateMap
   std::vector<std::pair<size_t, size_t>> _dfa_bounds;
 
   Assignment encode(const DFAState& state,
-		    const std::vector<jet::AttrSet>& var_sets) const;
+		    const std::vector<jet::Attr>& var_sets) const;
 };

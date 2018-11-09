@@ -1,9 +1,12 @@
 #ifndef DFA_H
 #define DFA_H
 
-#include <memory>
-#include <unordered_set>
 #include <vector>
+
+#include "Attr.hpp"
+
+#include "SMTBDD.h"
+#include "VarPartition.h"
 
 class DFAState
 {
@@ -16,7 +19,7 @@ class DFAState
   
   size_t dfa_index() const;
   size_t id() const;
-}
+};
 
 class DFA
 {
@@ -24,10 +27,11 @@ class DFA
 
   DFA(size_t index,
       size_t number_of_states,
-      VarPartition partition,
+      jet::AttrSet env_vars,
+      jet::AttrSet sys_vars,
       size_t initial_state,
       SMTBDD transition_function,
-      std::vector<size_t> accepting_states)
+      std::vector<size_t> accepting_states);
   
   size_t index() const;
   size_t number_of_states() const;
@@ -35,21 +39,25 @@ class DFA
   jet::AttrSet env_vars() const;
   jet::AttrSet sys_vars() const;
 
+  DFAState initial_state() const;
+  
   const SMTBDD& transition_function() const;
 
   const std::vector<DFAState>& accepting_states() const;
+
+  static DFA load_from_file(const std::string& base_filename,
+                           size_t i,
+                           const VarPartition& var_partition);
   
  private:
 
-  size_t number_of_vars;
-  std::vector<std::string> var_names;
-  size_t number_of_states;
-  size_t initial_state;
-  size_t number_of_nodes;
-  std::vector<size_t> final_states;
-  std::vector<size_t> behaviour;
-  std::vector<std::vector<size_t>> smtbdd;
-  IOPartition partition;
+  size_t _index;
+  size_t _number_of_states;
+  jet::AttrSet _env_vars;
+  jet::AttrSet _sys_vars;
+  DFAState _initial_state;
+  SMTBDD _transition_function;
+  std::vector<DFAState> _accepting_states;
 };
 
 #endif // DFA_H

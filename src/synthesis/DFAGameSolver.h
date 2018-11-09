@@ -3,31 +3,38 @@
 
 #include <memory>
 
-#include <BDDMgr.hpp>
+#include "Attr.hpp"
 
-#include "Common.h"
+#include "BDDDict.hpp"
+#include "FactoredSynthesizer.hpp"
+
 #include "SymbolicDFA.h"
-#include "InputFirst.h"
-#include "optional.h"
 
 class DFAGameSolver
 {
 public:
-    DFAGameSolver(std::shared_ptr<BDDDict> m);
+  DFAGameSolver(SyftMgr m, FactoredSynthesizer s);
 
-    bool realizablity(const SymbolicDFA& dfa);
+  bool realizability(const std::vector<SymbolicDFA>& dfas) const;
 	
-    /*my::optional<std::unordered_map<unsigned int, BDD>> realizablity_variant(
-      const SymbolicDFA& dfa);*/
-	
-    virtual ~DFAGameSolver();
-
-    void printBDDSat(const BDD& b, const SymbolicDFA& dfa);
+  /*my::optional<std::unordered_map<unsigned int, BDD>> realizablity_variant(
+    const SymbolicDFA& dfa);*/
+  
+  virtual ~DFAGameSolver();
+  
+  /* void printBDDSat(const BDD& b, const SymbolicDFA& dfa);*/
 
 private:
-        std::shared_ptr<BDDMgr> mgr;
+  SyftMgr mgr;
+  FactoredSynthesizer synthesizer;
     
-        bool reached_fixpoint(const std::vector<BDD>& winning_states);
+  bool reached_fixpoint(const std::vector<BDD>& winning_states) const;
+  BDD prime(const BDD& states) const;
+  BDD for_all(const jet::AttrSet& vars, const BDD& b) const;
+  SynthesisResult one_step_synthesis(const std::vector<SymbolicDFA>& dfas,
+                                     const BDD& next_winning_states) const;
+
+        /*
         std::string state2bin(int n);
         BDD state2bdd(int s, const SymbolicDFA& dfa);
 	std::vector<int> state2bit(int n, const SymbolicDFA& dfa);
@@ -42,6 +49,7 @@ private:
 			       const BDD& winning_states,
 			       const SymbolicDFA& dfa);
         void strategy(std::vector<BDD>& S2O, const SymbolicDFA& dfa);
+        */
 };
 
 #endif // DFAGAMESOLVER_H

@@ -13,10 +13,9 @@ using std::unique_ptr;
 using std::make_unique;
 using std::move;
 
-DFAGameSolver::DFAGameSolver(shared_ptr<BDDMgr> m,
-                             BoolesMethod s)
-    : mgr(move(m))
-    , synthesizer(move(s))
+DFAGameSolver::DFAGameSolver(SyftMgr m, FactoredSynthesizer s)
+  : mgr(move(m))
+  , synthesizer(move(s))
 {}
 
 DFAGameSolver::~DFAGameSolver()
@@ -57,7 +56,7 @@ string DFAGameSolver::state2bin(int n){
 }
 */
 
-bool DFAGameSolver::reached_fixpoint(const vector<BDD>& winning_states){
+bool DFAGameSolver::reached_fixpoint(const vector<BDD>& winning_states) const {
     size_t last = winning_states.size() - 1;
     
     return winning_states[last] == winning_states[last - 1];
@@ -77,53 +76,75 @@ void DFAGameSolver::printBDDSat(const BDD& b, const SymbolicDFA& dfa){
 }
 */
 
-BDD prime(const BDD& states)
+BDD DFAGameSolver::prime(const BDD& states) const
 {
   BDD primed_states = states;
   
   for (unsigned int index : states.SupportIndices())
   {
-    jet::Attr var = _bdd_dict.varAtIndex(index);
-    jet::Attr primed_var = _state_map.prime(var);
-    BDD bdd_var = _bdd_dict.bddOfVar(primed_var);
+    jet::Attr var = mgr.bdd_dict->varAtIndex(index);
+    jet::Attr primed_var = mgr.state_map.prime(var);
+    BDD bdd_var = mgr.bdd_dict->bddOfVar(primed_var);
     primed_states = primed_states.Compose(bdd_var, index);
   }
 
   return primed_states;
 }
 
-bool DFAGameSolver::realizablity(const SymbolicDFA& dfa){
+bool DFAGameSolver::realizability(const vector<SymbolicDFA>& dfas) const {
 
   vector<SkolemFunction> strategy;
-  vector<BDD> winning_states(1, dfa.accepting_states());
+  
+  vector<BDD> winning_states(1, mgr.cudd_mgr.bddOne());
+
+  // Initial set of winning states (maybe can maintain in factored form?)
+  for (const SymbolicDFA& dfa : dfas)
+    winning_states[0] &= dfa.accepting_states();
     
   do {
     SynthesisResult result =
-      one_step_synthesis(dfa, prime(winning_states.back()));
+      one_step_synthesis(dfas, prime(winning_states.back()));
         
-    BDD new_winning = for_all(dfa.env_vars(), result.precondition);
+    BDD new_winning = for_all(mgr.var_partition.env_vars(),
+                              result.precondition);
     winning_states.push_back(new_winning);
     strategy.push_back(result.skolemFunction);
   }
   while (!reached_fixpoint(winning_states));
 
-  Assignment initial_state = dfa.initial_assignment();
+  vector<jet::AttrSet> assigned_to_true;
+
+  for (const SymbolicDFA& dfa : dfas)
+    assigned_to_true.push_back(dfa.initial_assignment().assignedToTrue());
+
+  Assignment initial_assignment(jet::AttrSet::bigUnion(assigned_to_true));
     
-  return mgr->eval(winning_states.back(), initial_state);
+  return mgr.bdd_dict->eval(winning_states.back(), initial_assignment);
 }
 
-BDD DFAGameSolver::for_all(const jet::AttrSet& vars, const BDD& b){
-  BDD cube = _bdd_dict->cubeOfVars(vars);
+BDD DFAGameSolver::for_all(const jet::AttrSet& vars, const BDD& b) const {
+  BDD cube = mgr.bdd_dict->cubeOfVars(vars);
 
   return b.UnivAbstract(cube);
 }
 
-BDD DFAGameSolver::one_step_synthesis(const SymbolicDFA& dfa,
-                                      const BDD& next_winning_states){
-  BDD transition = dfa.transition_relation();
-  jet::AttrSet output_vars = dfa.output_vars();
+SynthesisResult DFAGameSolver::one_step_synthesis(
+  const vector<SymbolicDFA>& dfas,
+  const BDD& next_winning_states) const
+{
+  vector<BDD> factored_preimage;
+  factored_preimage.reserve(dfas.size() + 1);
+
+  for (const SymbolicDFA& dfa : dfas)
+    factored_preimage.push_back(dfa.transition_relation());
+
+  factored_preimage.push_back(next_winning_states);
+
+  jet::AttrSet next_state_vars = mgr.state_map.next_state_vars();
+  jet::AttrSet sys_vars = mgr.var_partition.sys_vars();
+  jet::AttrSet output_vars = sys_vars.unionWith(next_state_vars);
     
-  return synthesizer->run(transition & next_winning_states, output_vars);
+  return synthesizer.run(factored_preimage, output_vars);
 }
 
 /*

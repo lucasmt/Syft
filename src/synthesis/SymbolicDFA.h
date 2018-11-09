@@ -3,24 +3,41 @@
 
 #include "cuddObj.hh"
 
+#include "Attr.hpp"
+
+#include "Assignment.hpp"
+
+#include "DFA.h"
+#include "SyftMgr.h"
+
 class SymbolicDFA
 {
-  jet::AttrSet env_vars;
-  jet::AttrSet sys_vars;
-  jet::AttrSet state_vars;
-  jet::AttrSet next_state_vars;
+  jet::AttrSet _env_vars;
+  jet::AttrSet _sys_vars;
+  jet::AttrSet _state_vars;
+  jet::AttrSet _next_state_vars;
 
-  jet::AttrSet input_vars;
-  jet::AttrSet output_vars;
+  jet::AttrSet _input_vars;
+  jet::AttrSet _output_vars;
 
-  Assignment initial_assignment;
+  Assignment _initial_assignment;
 
-  BDD transition_relation;
+  BDD _transition_relation;
 
-  BDD accepting_states;
+  BDD _accepting_states;
+
+  BDD construct_bdd_new(const DFA& dfa, const SyftMgr& mgr) const;
+
+  std::vector<BDD> try_get(size_t index,
+                           std::vector<std::vector<BDD>>& tBDD,
+                           const std::vector<std::vector<size_t>>& smtbdd,
+                           size_t nbits,
+                           const std::vector<BDD>& bdd_vars) const;
   
 public:
 
+  SymbolicDFA(const DFA& dfa, const SyftMgr& mgr);
+  
   jet::AttrSet env_vars() const;
   jet::AttrSet sys_vars() const;
   jet::AttrSet input_vars() const;
@@ -29,21 +46,6 @@ public:
   Assignment initial_assignment() const;
   BDD transition_relation() const;
   BDD accepting_states() const;
-  /*  
-  size_t number_of_bits;
-  size_t number_of_vars;
-  size_t number_of_states;
-
-  std::vector<int> initial_bitvector;
-  std::vector<size_t> input_indices;
-  std::vector<size_t> output_indices;
-
-  std::vector<BDD> bdd_vars;
-  
-  std::vector<BDD> transition_function;
-
-  BDD final_states;
-  */
 };
 
 #endif // SYMBOLICDFA_H

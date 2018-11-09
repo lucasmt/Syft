@@ -1,36 +1,48 @@
 #include "SymbolicDFA.h"
 
-SymbolicDFA::SymbolicDFA(const DFA& dfa,
-			 const StateMap& state_map,
-			 const BDDDict& bdd_dict)
+using std::vector;
+
+SymbolicDFA::SymbolicDFA(const DFA& dfa, const SyftMgr& mgr)
 {
-  env_vars = dfa.env_vars();
-  sys_vars = dfa.sys_vars();
-  state_vars = state_map.state_vars(dfa);
-  next_state_vars = state_map.next_state_vars(dfa);
+  _env_vars = dfa.env_vars();
+  _sys_vars = dfa.sys_vars();
+  _state_vars = mgr.state_map.state_vars(dfa);
+  _next_state_vars = mgr.state_map.next_state_vars(dfa);
 
-  initial_assignment = state_map.to_assignment(dfa.initial_state());
+  _input_vars = _env_vars.unionWith(_state_vars);
+  _output_vars = _sys_vars.unionWith(_next_state_vars);
 
-  transition_relation = construct_bdd_new(dfa, state_map, bdd_dict);
+  _initial_assignment = mgr.state_map.encode_current(dfa.initial_state());
 
-  accepting_states = bdd_dict.bddZero();
+  _transition_relation = construct_bdd_new(dfa, mgr);
+
+  _accepting_states = mgr.cudd_mgr.bddZero();
 
   for (DFAState accepting_state : dfa.accepting_states())
   {
-    Assignment accepting_assignment = state_map.to_assignment(accepting_state);
+    Assignment accepting_assignment =
+      mgr.state_map.encode_current(accepting_state);
     
     jet::AttrSet assigned_to_true = accepting_assignment.assignedToTrue();
     
-    accepting_states |= bdd_dict.cubeOfVars(assigned_to_true);
+    _accepting_states |= mgr.bdd_dict->cubeOfVars(assigned_to_true);
   }
 }
 
-BDD SymbolicDFA::construct_bdd_new(const DFA& dfa,
-				   const StateMap& state_map,
-				   const BDDDict& bdd_dict) const {
-  return bdd_dict.bddZero();
+jet::AttrSet SymbolicDFA::env_vars() const { return _env_vars; }
+jet::AttrSet SymbolicDFA::sys_vars() const { return _sys_vars; }
+jet::AttrSet SymbolicDFA::input_vars() const { return _input_vars; }
+jet::AttrSet SymbolicDFA::output_vars() const { return _output_vars; }
+
+Assignment initial_assignment() const { return _initial_assignment; }
+BDD transition_relation() const { return _transition_relation; }
+BDD accepting_states() const { return _accepting_states; }
+
+BDD SymbolicDFA::construct_bdd_new(const DFA& dfa, const SyftMgr& mgr) const
+{
+  return mgr.bdd_dict->bddZero();
   /*
-  BDD transition_relation = bdd_dict.bddZero();
+  BDD transition_relation = bdd_dict->bddZero();
 
   vector<vector<BDD>> tBDD(dfa.smtbdd.size());
 
@@ -45,7 +57,7 @@ BDD SymbolicDFA::construct_bdd_new(const DFA& dfa,
   for (jet::Attr state_var : state_vars){
     for (DFAState state : dfa.states()){
       
-      BDD tmp = bdd_dict.bddOne();
+      BDD tmp = bdd_dict->bddOne();
       
   
   for(size_t i = 0; i < symbolic_dfa.number_of_bits; i++){
@@ -68,11 +80,11 @@ BDD SymbolicDFA::construct_bdd_new(const DFA& dfa,
   */
 }
 
-vector<BDD> SymbolicDFAConverter::try_get(size_t index,
-					  vector<vector<BDD>>& tBDD,
-					  const vector<vector<size_t>>& smtbdd,
-					  size_t nbits,
-					  const vector<BDD>& bdd_vars) const
+vector<BDD> SymbolicDFA::try_get(size_t index,
+                                 vector<vector<BDD>>& tBDD,
+                                 const vector<vector<size_t>>& smtbdd,
+                                 size_t nbits,
+                                 const vector<BDD>& bdd_vars) const
 {
   return vector<BDD>();
   /*

@@ -1,6 +1,12 @@
 #include "StateMap.h"
 
-StateMap::StateMap(const std::vector<DFA>& dfas,
+#include <cassert>
+#include <stdexcept>
+
+using std::invalid_argument;
+using std::vector;
+
+StateMap::StateMap(const vector<DFA>& dfas,
 		   const VarPartition& partition)
 {
   size_t last_id = partition.max_id();
@@ -26,7 +32,20 @@ StateMap::StateMap(const std::vector<DFA>& dfas,
   }
 }
 
-jet::AttrSet StateMap::state_vars(const DFA& dfa)
+
+jet::Attr StateMap::prime(jet::Attr var) const
+{
+  auto position = lower_bound(_state_vars.begin(), _state_vars.end(), var);
+
+  if (position == _state_vars.end() || *position != var)
+    throw invalid_argument("Tried to prime non-state variable: " + var.id());
+  
+  size_t index = position - _state_vars.begin();
+  
+  return _next_state_vars[index];
+}  
+
+jet::AttrSet StateMap::state_vars(const DFA& dfa) const
 {
   size_t i = dfa.index();
   
@@ -34,7 +53,7 @@ jet::AttrSet StateMap::state_vars(const DFA& dfa)
 		      _state_vars.begin() + _dfa_bounds[i].second);
 }
 
-jet::AttrSet StateMap::next_state_vars(const DFA& dfa)
+jet::AttrSet StateMap::next_state_vars(const DFA& dfa) const
 {
   size_t i = dfa.index();
 
@@ -43,14 +62,14 @@ jet::AttrSet StateMap::next_state_vars(const DFA& dfa)
 }
 
 Assignment StateMap::encode(const DFAState& state,
-			    const vector<jet::Attr>& vars) const
+                            const vector<jet::Attr>& vars) const
 {
   size_t i = state.dfa_index();
   size_t id = state.id();
   vector<jet::Attr> assigned_to_true;
 
-  vector<jet::Attr>::iterator begin = vars.begin() + _dfa_bounds[i].first;
-  vector<jet::Attr>::iterator end = vars.begin() + _dfa_bounds[i].second;
+  auto begin = vars.begin() + _dfa_bounds[i].first;
+  auto end = vars.begin() + _dfa_bounds[i].second;
   
   for (auto it = begin; it != end && id != 0; ++it) {
     size_t bit = id & 1; // take the least-significant bit
@@ -63,26 +82,12 @@ Assignment StateMap::encode(const DFAState& state,
   return Assignment(jet::AttrSet(assigned_to_true));
 }
 
-Assignment StateMap::encode_current(const DFAState& state)
+Assignment StateMap::encode_current(const DFAState& state) const
 {
   return encode(state, _state_vars);
 }
 
-Assignment StateMap::encode_next(const DFAState& state)
+Assignment StateMap::encode_next(const DFAState& state) const
 {
   return encode(state, _next_state_vars);
-}
-
-jet::Attr prime(jet::Attr var)
-{
-  vector<jet::Attr>::iterator position = lower_bound(_state_vars.begin(),
-						     _state_vars.end(),
-						     var);
-
-  if (position == _state_vars.end() || *position != var)
-    throw invalid_argument("Tried to prime non-state variable: " + var.id());
-  
-  size_t index = position - _state_vars.begin();
-  
-  return _next_state_vars[index];
 }

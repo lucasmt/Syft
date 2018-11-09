@@ -2,27 +2,29 @@
 
 #include <fstream>
 #include <iostream>
+#include <memory>
 #include <set>
+#include <stdexcept>
 
 #include <boost/algorithm/string.hpp>
 
+using boost::algorithm::is_any_of;
+using boost::algorithm::split;
 using std::cout;
 using std::endl;
 using std::ifstream;
-using boost::algorithm::is_any_of;
-using boost::algorithm::split;
+using std::move;
+using std::runtime_error;
 using std::string;
+using std::to_string;
 using std::vector;
 
-DFALoader::DFALoader(VarPartition partition)
-  : _partition(partition)
-{}
-
-DFA DFALoader::run(const string& base_filename, size_t index) const
+DFA DFALoader::run(const string& base_filename,
+                   size_t index,
+                   const VarPartition& partition) const
 {
-  string full_filename = base_filename + index + ".dfa";
+  string full_filename = base_filename + to_string(index) + ".dfa";
   ifstream f(full_filename);
-  DFA dfa;
 
   if (!f.is_open())
     throw runtime_error("Unable to open file: " + full_filename);
@@ -70,7 +72,7 @@ DFA DFALoader::run(const string& base_filename, size_t index) const
       split(fields, line, is_any_of(" "));
       int i = 1;
       while(i < fields.size()){
-	behaviour.push_back(stoi(fields[i]));
+	behavior.push_back(stoi(fields[i]));
 	++i;
       }
     }
@@ -80,22 +82,30 @@ DFA DFALoader::run(const string& base_filename, size_t index) const
 	split(fields, line, is_any_of(" "));
 
 	// starts at 1 because of leading whitespace?
-	SMTBDDNode node(stoi(fields[1]), stoi(fields[2]), stoi(fields[3]));
+        int first = stoi(fields[1]);
+
+        SMTBDDNode node = (first == -1)
+          ? SMTBDDNode::terminal(stoi(fields[2]))
+          : SMTBDDNode::ite(partition.from_name(var_names[first]),
+                            stoi(fields[2]),
+                            stoi(fields[3]));
+          
 	nodes.push_back(node);
       }
     }
   }
 
   f.close();
-
+  
   SMTBDD smtbdd(behavior, nodes);
   
   return DFA(index,
 	     number_of_states,
-	     partition,
+             partition.env_vars(var_names),
+             partition.sys_vars(var_names),
 	     initial_state,
-	     transition_function,
-	     accepting_states);
+	     move(smtbdd),
+	     move(accepting_states));
 }
 
 bool DFALoader::strfind(const string& str, const string& target) const {
