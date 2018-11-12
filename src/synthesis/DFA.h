@@ -45,6 +45,8 @@ class DFA
 
   const std::vector<DFAState>& accepting_states() const;
 
+  DFAState ith_state(size_t i) const;
+  
   static DFA load_from_file(const std::string& base_filename,
                            size_t i,
                            const VarPartition& var_partition);

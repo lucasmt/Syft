@@ -30,6 +30,8 @@ public:
   
   jet::AttrSet output_vars() const;
 
+  BDD minterm(const DFAState& state) const;
+
 private:
 
   std::shared_ptr<BDDDict> construct_vars(const Cudd& cudd_mgr,

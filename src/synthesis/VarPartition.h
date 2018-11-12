@@ -23,10 +23,9 @@ public:
 
   jet::AttrSet env_vars() const;
   jet::AttrSet sys_vars() const;
-  jet::AttrSet env_vars(std::vector<std::string> names) const;
-  jet::AttrSet sys_vars(std::vector<std::string> names) const;
 
-  jet::Attr from_name(std::string name) const;
+  jet::Attr from_name(const std::string& name) const;
+  jet::AttrSet from_names(const std::vector<std::string>& names) const;
 
   size_t max_id() const;
 };

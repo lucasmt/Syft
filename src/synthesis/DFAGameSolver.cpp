@@ -5,6 +5,8 @@
 #include "SkolemFunction.hpp"
 #include "SynthesisResult.hpp"
 
+#include "debug.h"
+
 using std::string;
 using std::unordered_map;
 using std::vector;
@@ -100,7 +102,9 @@ bool DFAGameSolver::realizability(const vector<SymbolicDFA>& dfas) const {
   // Initial set of winning states (maybe can maintain in factored form?)
   for (const SymbolicDFA& dfa : dfas)
     winning_states[0] &= dfa.accepting_states();
-    
+
+  report("Winning set: ", winning_states[0]);
+  
   do {
     SynthesisResult result =
       one_step_synthesis(dfas, prime(winning_states.back()));
@@ -109,6 +113,8 @@ bool DFAGameSolver::realizability(const vector<SymbolicDFA>& dfas) const {
                               result.precondition);
     winning_states.push_back(new_winning);
     strategy.push_back(result.skolemFunction);
+
+    report("Winning set: ", winning_states.back());
   }
   while (!reached_fixpoint(winning_states));
 

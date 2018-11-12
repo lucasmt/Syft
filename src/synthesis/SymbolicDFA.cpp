@@ -1,5 +1,7 @@
 #include "SymbolicDFA.h"
 
+#include "debug.h"
+
 using std::vector;
 
 SymbolicDFA::SymbolicDFA(const DFA& dfa, const SyftMgr& mgr)
@@ -20,13 +22,11 @@ SymbolicDFA::SymbolicDFA(const DFA& dfa, const SyftMgr& mgr)
 
   for (DFAState accepting_state : dfa.accepting_states())
   {
-    Assignment accepting_assignment =
-      mgr.state_map.encode_current(accepting_state);
-    
-    jet::AttrSet assigned_to_true = accepting_assignment.assignedToTrue();
-    
-    _accepting_states |= mgr.bdd_dict->cubeOfVars(assigned_to_true);
+    _accepting_states |= mgr.minterm(accepting_state);
   }
+
+  report("Transition relation: ", _transition_relation);
+  report("Accepting states: ", _accepting_states);
 }
 
 jet::AttrSet SymbolicDFA::env_vars() const { return _env_vars; }
@@ -34,13 +34,52 @@ jet::AttrSet SymbolicDFA::sys_vars() const { return _sys_vars; }
 jet::AttrSet SymbolicDFA::input_vars() const { return _input_vars; }
 jet::AttrSet SymbolicDFA::output_vars() const { return _output_vars; }
 
-Assignment initial_assignment() const { return _initial_assignment; }
-BDD transition_relation() const { return _transition_relation; }
-BDD accepting_states() const { return _accepting_states; }
+Assignment SymbolicDFA::initial_assignment() const
+{
+  return _initial_assignment;
+}
+
+BDD SymbolicDFA::transition_relation() const
+{
+  return _transition_relation;
+}
+
+BDD SymbolicDFA::accepting_states() const
+{
+  return _accepting_states;
+}
 
 BDD SymbolicDFA::construct_bdd_new(const DFA& dfa, const SyftMgr& mgr) const
 {
-  return mgr.bdd_dict->bddZero();
+  vector<ADD> adds = mgr.interpret(dfa.transition_function());
+  BDD bdd = mgr.cudd_mgr.bddZero();
+
+  vector<BDD> state_minterms;
+  state_minterms.reserve(dfa.number_of_states());
+  
+  for (size_t i = 0; i < dfa.number_of_states(); i++)
+  {
+    DFAState state = dfa.ith_state(i);
+    BDD state_minterm = mgr.minterm(state);
+    state_minterms.push_back(state_minterm);
+  }
+  
+  for (size_t i = 0; i < dfa.number_of_states(); i++)
+  {
+    BDD state_transition = state_minterms[i];
+    
+    for (size_t j = 0; j < mgr.state_map.vars_per_dfa(dfa); j++)
+    {
+      jet::Attr next_state_var = mgr.state_map.next_state_var(dfa, j);
+      BDD next_state_var_bdd = mgr.bdd_dict->bddOfVar(next_state_var);
+      
+      state_transition &= adds[i].BddIthBit(j).Xnor(next_state_var_bdd);
+    }
+    
+    bdd |= state_transition;
+  }
+
+  return bdd;
   /*
   BDD transition_relation = bdd_dict->bddZero();
 

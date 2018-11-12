@@ -22,6 +22,9 @@ class SMTBDDNode
 
  private:
 
+  SMTBDDNode(size_t id, size_t left_index, size_t right_index);
+  SMTBDDNode(size_t value);
+  
   bool _is_terminal;
   size_t _value_or_id;
   size_t _left_index;

@@ -80,6 +80,27 @@ VarPartition VarPartition::load(const string& partition_file) {
   return partition;
 }
 
+jet::AttrSet VarPartition::env_vars() const { return _env_vars; }
+jet::AttrSet VarPartition::sys_vars() const { return _sys_vars; }
+
+jet::Attr VarPartition::from_name(const string& name) const
+{
+  return _name_to_var.at(name);
+}
+
+jet::AttrSet VarPartition::from_names(const vector<string>& names) const
+{
+  vector<jet::Attr> vars;
+  vars.reserve(names.size());
+
+  for (const string& name : names)
+  {
+    vars.push_back(_name_to_var.at(name));
+  }
+
+  return jet::AttrSet(vars);
+}
+
 size_t VarPartition::max_id() const
 {
   size_t max_env = _env_vars.maxElem()->id();

@@ -45,20 +45,63 @@ jet::Attr StateMap::prime(jet::Attr var) const
   return _next_state_vars[index];
 }  
 
+jet::AttrSet StateMap::state_vars() const
+{
+  return _state_vars;
+}
+
+jet::AttrSet StateMap::next_state_vars() const
+{
+  return _next_state_vars;
+}
+
+jet::AttrSet StateMap::state_vars(size_t dfa_index) const
+{
+  return jet::AttrSet(_state_vars.begin() + _dfa_bounds[dfa_index].first,
+  		      _state_vars.begin() + _dfa_bounds[dfa_index].second);
+}
+
+jet::AttrSet StateMap::next_state_vars(size_t dfa_index) const
+{
+  return jet::AttrSet(_next_state_vars.begin() + _dfa_bounds[dfa_index].first,
+  		      _next_state_vars.begin() + _dfa_bounds[dfa_index].second);
+}
+
 jet::AttrSet StateMap::state_vars(const DFA& dfa) const
 {
-  size_t i = dfa.index();
-  
-  return jet::AttrSet(_state_vars.begin() + _dfa_bounds[i].first,
-		      _state_vars.begin() + _dfa_bounds[i].second);
+  return state_vars(dfa.index());
 }
 
 jet::AttrSet StateMap::next_state_vars(const DFA& dfa) const
 {
-  size_t i = dfa.index();
+  return next_state_vars(dfa.index());
+}
 
-  return jet::AttrSet(_next_state_vars.begin() + _dfa_bounds[i].first,
-		      _next_state_vars.begin() + _dfa_bounds[i].second);
+jet::Attr StateMap::state_var(const DFA& dfa, size_t var_index) const
+{
+  size_t i = dfa.index();
+  size_t lower_bound = _dfa_bounds[i].first;
+
+  // check if var_index is within the bounds?
+  
+  return _state_vars[lower_bound + var_index];
+}
+
+jet::Attr StateMap::next_state_var(const DFA& dfa, size_t var_index) const
+{
+  size_t i = dfa.index();
+  size_t lower_bound = _dfa_bounds[i].first;
+
+  // check if var_index is within the bounds?
+  
+  return _next_state_vars[lower_bound + var_index];
+}
+
+size_t StateMap::vars_per_dfa(const DFA& dfa) const
+{
+  size_t i = dfa.index();
+  
+  return _dfa_bounds[i].second - _dfa_bounds[i].first;
 }
 
 Assignment StateMap::encode(const DFAState& state,

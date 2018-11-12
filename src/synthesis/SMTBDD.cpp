@@ -2,18 +2,28 @@
 
 using std::vector;
 
-SMTBDDNode SMTBDDNode::ite(jet::Attr var, size_t left_index, size_t right_index)
+SMTBDDNode::SMTBDDNode(size_t value)
+{
+  _is_terminal = true;
+  _value_or_id = value;
+}
+
+SMTBDDNode::SMTBDDNode(size_t id, size_t left_index, size_t right_index)
 {
   _is_terminal = false;
-  _value_or_id = var.id();
+  _value_or_id = id;
   _left_index = left_index;
   _right_index = right_index;
 }
 
+SMTBDDNode SMTBDDNode::ite(jet::Attr var, size_t left_index, size_t right_index)
+{
+  return SMTBDDNode(var.id(), left_index, right_index);
+}
+
 SMTBDDNode SMTBDDNode::terminal(size_t value)
 {
-  _is_terminal = true;
-  _value_or_id = value;
+  return SMTBDDNode(value);
 }
 
 bool SMTBDDNode::is_terminal() const { return _is_terminal; }
