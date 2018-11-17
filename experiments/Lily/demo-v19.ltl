@@ -1,0 +1,2 @@
+G(F(ets=1)) -> (G(hl=1 -> (hl=1 U ets=1)) * G(fl=1 -> (fl=1 U ets=1)) * G(hl=0 + fl=0) * G(ec=1 -> F(fl=1)) * G(F(hl=1)));
+

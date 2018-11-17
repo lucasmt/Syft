@@ -19,7 +19,7 @@ class SMTBDDNode
   size_t left_index() const;
   size_t right_index() const;
   size_t terminal_value() const;
-
+  
  private:
 
   SMTBDDNode(size_t id, size_t left_index, size_t right_index);
@@ -41,6 +41,8 @@ public:
   const std::vector<size_t>& behavior() const;
   const std::vector<SMTBDDNode>& nodes() const;
 
+  SMTBDDNode at(size_t state) const;
+  
 private:
 
   std::vector<size_t> _behavior;

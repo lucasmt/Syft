@@ -12,6 +12,8 @@
 
 class SymbolicDFA
 {
+  size_t _index;
+  
   jet::AttrSet _env_vars;
   jet::AttrSet _sys_vars;
   jet::AttrSet _state_vars;
@@ -37,6 +39,8 @@ class SymbolicDFA
 public:
 
   SymbolicDFA(const DFA& dfa, const SyftMgr& mgr);
+
+  size_t index() const;
   
   jet::AttrSet env_vars() const;
   jet::AttrSet sys_vars() const;

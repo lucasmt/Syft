@@ -6,6 +6,8 @@ using std::vector;
 
 SymbolicDFA::SymbolicDFA(const DFA& dfa, const SyftMgr& mgr)
 {
+  _index = dfa.index();
+  
   _env_vars = dfa.env_vars();
   _sys_vars = dfa.sys_vars();
   _state_vars = mgr.state_map.state_vars(dfa);
@@ -24,10 +26,9 @@ SymbolicDFA::SymbolicDFA(const DFA& dfa, const SyftMgr& mgr)
   {
     _accepting_states |= mgr.minterm(accepting_state);
   }
-
-  report("Transition relation: ", _transition_relation);
-  report("Accepting states: ", _accepting_states);
 }
+
+size_t SymbolicDFA::index() const { return _index; }
 
 jet::AttrSet SymbolicDFA::env_vars() const { return _env_vars; }
 jet::AttrSet SymbolicDFA::sys_vars() const { return _sys_vars; }

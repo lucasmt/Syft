@@ -1,7 +1,5 @@
 #include "SyftMgr.h"
 
-#include "debug.h"
-
 using std::make_shared;
 using std::make_unique;
 using std::move;
@@ -46,31 +44,7 @@ SyftMgr::SyftMgr(const vector<DFA>& dfas, VarPartition partition)
   : var_partition(move(partition))
   , state_map(dfas, var_partition)
   , bdd_dict(construct_vars(cudd_mgr, var_partition, state_map))
-{
-  for (jet::Attr var : state_map.state_vars())
-  {
-    report("State var: ", var.toStringWith("z"));
-    report("BDD: ", bdd_dict->bddOfVar(var));
-  }
-
-  for (jet::Attr var : var_partition.env_vars())
-  {
-    report("Env var: ", var.toStringWith("x"));
-    report("BDD: ", bdd_dict->bddOfVar(var));
-  }
-
-  for (jet::Attr var : var_partition.sys_vars())
-  {
-    report("Sys var: ", var.toStringWith("y"));
-    report("BDD: ", bdd_dict->bddOfVar(var));
-  }
-  
-  for (jet::Attr var : state_map.next_state_vars())
-  {
-    report("Next state var: ", var.toStringWith("z"));
-    report("BDD: ", bdd_dict->bddOfVar(var));
-  }    
-}
+{}
 
 ADD SyftMgr::add_of_var(jet::Attr var) const
 {
@@ -119,8 +93,8 @@ vector<ADD> SyftMgr::interpret(const SMTBDD& smtbdd) const
   for (size_t index : behavior)
   {
     ADD add = build_add_table(table, index, nodes);
-    report("Bit 0: ", add.BddIthBit(0));
-    report("Bit 1: ", add.BddIthBit(1));
+    //report("Bit 0: ", add.BddIthBit(0));
+    //report("Bit 1: ", add.BddIthBit(1));
     transition_function.push_back(add);
   }
 
@@ -137,9 +111,15 @@ jet::AttrSet SyftMgr::output_vars() const
 
 BDD SyftMgr::minterm(const DFAState& state) const
 {
-  Assignment assignment = state_map.encode_current(state);
-  jet::AttrSet setToTrue = assignment.assignedToTrue();
-  jet::AttrSet allStateVars = state_map.state_vars(state.dfa_index());
+  Assignment symbolic_state = state_map.encode_current(state);
+
+  return minterm(state.dfa_index(), symbolic_state);
+}
+
+BDD SyftMgr::minterm(size_t dfa_index, const Assignment& symbolic_state) const
+{
+  jet::AttrSet setToTrue = symbolic_state.assignedToTrue();
+  jet::AttrSet allStateVars = state_map.state_vars(dfa_index);
   jet::AttrSet setToFalse = allStateVars.differenceWith(setToTrue);
 
   BDD minterm = cudd_mgr.bddOne();

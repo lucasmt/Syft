@@ -5,8 +5,6 @@
 #include "SkolemFunction.hpp"
 #include "SynthesisResult.hpp"
 
-#include "debug.h"
-
 using std::string;
 using std::unordered_map;
 using std::vector;
@@ -14,6 +12,56 @@ using std::shared_ptr;
 using std::unique_ptr;
 using std::make_unique;
 using std::move;
+
+#include <iostream>
+
+void print_strategy(const vector<SkolemFunction>& strategy, const SyftMgr& m)
+{
+  for (size_t i = 0; i < strategy.size(); i++)
+  {
+    for (jet::Attr var : m.output_vars())
+    {
+      std::cout << i << ": "
+                << m.bdd_dict->bddOfVar(var) << " = "
+                << strategy[i][var] << std::endl;
+    }
+  }
+}
+
+void print_winning_states(const BDD& bdd)
+{
+  std::cout << "Winning states: " << bdd << std::endl;
+}
+
+void print_dfa(const SymbolicDFA& dfa, const SyftMgr& m)
+{
+  jet::AttrSet env_vars = dfa.env_vars();
+  jet::AttrSet sys_vars = dfa.sys_vars();
+  jet::AttrSet state_vars = dfa.input_vars().differenceWith(env_vars);
+  jet::AttrSet next_state_vars = dfa.output_vars().differenceWith(sys_vars);
+  
+  std::cout << "State vars: "
+            << m.bdd_dict->cubeOfVars(state_vars)
+            << std::endl;
+
+  std::cout << "Environment vars: "
+            << m.bdd_dict->cubeOfVars(env_vars)
+            << std::endl;
+  
+  std::cout << "System vars: "
+            << m.bdd_dict->cubeOfVars(sys_vars)
+            << std::endl;
+
+  std::cout << "Next-State vars: "
+            << m.bdd_dict->cubeOfVars(next_state_vars)
+            << std::endl;
+
+  std::cout << "Initial state: "
+            << m. minterm(dfa.index(), dfa.initial_assignment())
+            << std::endl;
+  
+  std::cout << "Accepting states: " << dfa.accepting_states() << std::endl;
+}
 
 DFAGameSolver::DFAGameSolver(SyftMgr m, FactoredSynthesizer s)
   : mgr(move(m))
@@ -96,14 +144,20 @@ BDD DFAGameSolver::prime(const BDD& states) const
 bool DFAGameSolver::realizability(const vector<SymbolicDFA>& dfas) const {
 
   vector<SkolemFunction> strategy;
-  
+
+  Assignment initial_assignment;
   vector<BDD> winning_states(1, mgr.cudd_mgr.bddOne());
 
   // Initial set of winning states (maybe can maintain in factored form?)
-  for (const SymbolicDFA& dfa : dfas)
+  for (const SymbolicDFA& dfa : dfas) {
+    print_dfa(dfa, mgr);
+    initial_assignment &= dfa.initial_assignment();
     winning_states[0] &= dfa.accepting_states();
+  }
 
-  report("Winning set: ", winning_states[0]);
+  print_winning_states(winning_states.back());
+
+  bool reached_initial = false;
   
   do {
     SynthesisResult result =
@@ -111,21 +165,21 @@ bool DFAGameSolver::realizability(const vector<SymbolicDFA>& dfas) const {
         
     BDD new_winning = for_all(mgr.var_partition.env_vars(),
                               result.precondition);
-    winning_states.push_back(new_winning);
+
+    BDD old_winning = winning_states.back();
+    winning_states.push_back(old_winning | new_winning);
     strategy.push_back(result.skolemFunction);
 
-    report("Winning set: ", winning_states.back());
+    print_winning_states(winning_states.back());
+
+    reached_initial = mgr.bdd_dict->eval(winning_states.back(),
+                                              initial_assignment);
   }
-  while (!reached_fixpoint(winning_states));
+  while (!reached_fixpoint(winning_states) && !reached_initial);
 
-  vector<jet::AttrSet> assigned_to_true;
-
-  for (const SymbolicDFA& dfa : dfas)
-    assigned_to_true.push_back(dfa.initial_assignment().assignedToTrue());
-
-  Assignment initial_assignment(jet::AttrSet::bigUnion(assigned_to_true));
-    
-  return mgr.bdd_dict->eval(winning_states.back(), initial_assignment);
+  print_strategy(strategy, mgr);
+  
+  return reached_initial;
 }
 
 BDD DFAGameSolver::for_all(const jet::AttrSet& vars, const BDD& b) const {

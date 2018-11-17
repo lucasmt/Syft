@@ -4,8 +4,6 @@
 
 #include <boost/algorithm/string.hpp>
 
-#include "debug.h"
-
 using boost::algorithm::is_any_of;
 using boost::algorithm::split;
 using std::ifstream;
@@ -89,36 +87,29 @@ DFA DFA::load_from_file(const string& base_filename,
   
   while(getline(f, line)){
 
-    report("Line: ", line);
-    
     if(strfind(line, "number of variables")){
       split(fields, line, is_any_of(" "));
-      report("Number of variables: ", fields[3]);
       size_t number_of_vars = stoi(fields[3]);
     }
     else if(strfind(line, "variables")){
       split(var_names, line, is_any_of(" "));
       var_names.erase(var_names.begin()); // remove "variables" token
-      for (string name : var_names) report("Var name: ", name);
     }
     else if(strfind(line, "states")){
       split(fields, line, is_any_of(" "));
-      report("States: ", fields[1]);
       number_of_states = stoi(fields[1]);
     }
     else if(strfind(line, "initial")){
       split(fields, line, is_any_of(" "));
-      report("Initial: ", fields[1]);
       initial_state = stoi(fields[1]);
     }
     else if(strfind(line, "bdd nodes")){
       split(fields, line, is_any_of(" "));
-      report("BDD nodes: ", fields[2]);
       nodes.reserve(stoi(fields[2]));
     }
     else if(strfind(line, "final")){
       split(fields, line, is_any_of(" "));
-      int i = 1; // start at 1 to ignore "final" token
+      int i = 1; // skip "final" token
       while(i < fields.size()){
 	if(fields[i] == "1")
 	  accepting_states.push_back(i-1);
@@ -127,9 +118,8 @@ DFA DFA::load_from_file(const string& base_filename,
     }
     else if(strfind(line, "behaviour")){
       split(fields, line, is_any_of(" "));
-      int i = 1;
+      int i = 1; // skip "behaviour" token
       while(i < fields.size()){
-	report("Behaviour: ", fields[i]);
 	behavior.push_back(stoi(fields[i]));
 	++i;
       }
@@ -139,14 +129,8 @@ DFA DFA::load_from_file(const string& base_filename,
       while (getline(f, line) && !strfind(line, "end")) {
 	split(fields, line, is_any_of(" "));
 	
-	report("BDD 1: ", fields[1]);
-	report("BDD 2: ", fields[2]);
-	report("BDD 3: ", fields[3]);
-	
-        int first = stoi(fields[1]);
+        int first = stoi(fields[1]); // skip "" token
 
-	if (first != -1) report("Var name: ", var_names[first]);
-	
         SMTBDDNode node = (first == -1)
           ? SMTBDDNode::terminal(stoi(fields[2]))
           : SMTBDDNode::ite(var_partition.from_name(var_names[first]),
@@ -161,12 +145,19 @@ DFA DFA::load_from_file(const string& base_filename,
   f.close();
   
   SMTBDD smtbdd(behavior, nodes);
+
+  // need to remove extraneous initial state that MONA produces for some reason
+
+  // extraneous initial state unconditionally transitions to true initial state
+  SMTBDDNode initial_node = smtbdd.at(initial_state);  
+  assert(initial_node.is_terminal());
+  size_t true_initial_state = initial_node.terminal_value();
   
   return DFA(index,
 	     number_of_states,
-             var_partition.from_names(var_names),
-             var_partition.from_names(var_names),
-	     initial_state,
+             var_partition.env_vars(var_names),
+             var_partition.sys_vars(var_names),
+	     true_initial_state,
 	     move(smtbdd),
 	     move(accepting_states));
 }

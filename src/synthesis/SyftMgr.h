@@ -31,6 +31,7 @@ public:
   jet::AttrSet output_vars() const;
 
   BDD minterm(const DFAState& state) const;
+  BDD minterm(size_t dfa_index, const Assignment& symbolic_state) const;
 
 private:
 

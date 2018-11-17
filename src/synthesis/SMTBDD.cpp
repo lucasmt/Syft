@@ -47,3 +47,7 @@ const vector<SMTBDDNode>& SMTBDD::nodes() const
   return _nodes;
 }
  
+SMTBDDNode SMTBDD::at(size_t state) const
+{
+  return _nodes[_behavior[state]];
+}

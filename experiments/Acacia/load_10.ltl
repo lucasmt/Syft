@@ -1,0 +1,1 @@
+(((G (false  || (!(X(grant0))) || (request0)))) && ((G (false  || (!(X(grant1))) || (request1)))) && ((G (false  || (!(X(grant2))) || (request2)))) && ((G (false  || (!(X(grant3))) || (request3)))))

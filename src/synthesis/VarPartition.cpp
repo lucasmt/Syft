@@ -8,6 +8,7 @@
 
 using boost::algorithm::is_any_of;
 using boost::algorithm::split;
+using boost::to_upper;
 using std::ifstream;
 using std::max;
 using std::runtime_error;
@@ -55,10 +56,10 @@ VarPartition VarPartition::load(const string& partition_file) {
   string line;
   while(getline(f, line)){
     if(f.is_open()){
-      if(line.compare(0, 6, "inputs") == 0){
+      if(line.compare(0, 8, ".inputs:") == 0){
 	split(inputs, line, is_any_of(" "));
       }
-      else if(line.compare(0, 7, "outputs") == 0){
+      else if(line.compare(0, 9, ".outputs:") == 0){
 	split(outputs, line, is_any_of(" "));
       }
       else{
@@ -75,6 +76,9 @@ VarPartition VarPartition::load(const string& partition_file) {
   inputs.erase(inputs.begin());
   outputs.erase(outputs.begin());
 
+  for (string& input : inputs) to_upper(input);
+  for (string& output : outputs) to_upper(output);
+  
   VarPartition partition(inputs, outputs);
 
   return partition;
@@ -96,6 +100,36 @@ jet::AttrSet VarPartition::from_names(const vector<string>& names) const
   for (const string& name : names)
   {
     vars.push_back(_name_to_var.at(name));
+  }
+
+  return jet::AttrSet(vars);
+}
+
+jet::AttrSet VarPartition::env_vars(const vector<string>& names) const
+{
+  vector<jet::Attr> vars;
+  vars.reserve(names.size());
+
+  for (const string& name : names)
+  {
+    jet::Attr var = _name_to_var.at(name);
+    
+    if (_env_vars.hasElem(var)) vars.push_back(_name_to_var.at(name));
+  }
+
+  return jet::AttrSet(vars);
+}
+
+jet::AttrSet VarPartition::sys_vars(const vector<string>& names) const
+{
+  vector<jet::Attr> vars;
+  vars.reserve(names.size());
+
+  for (const string& name : names)
+  {
+    jet::Attr var = _name_to_var.at(name);
+    
+    if (_sys_vars.hasElem(var)) vars.push_back(_name_to_var.at(name));
   }
 
   return jet::AttrSet(vars);
