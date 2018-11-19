@@ -14,6 +14,10 @@ class StateMap
   StateMap(const std::vector<DFA>& dfas, const VarPartition& partition);
 
   jet::Attr prime(jet::Attr state_var) const;
+  jet::Attr unprime(jet::Attr next_state_var) const;
+
+  jet::AttrSet prime(const jet::AttrSet& state_vars) const;
+  jet::AttrSet unprime(const jet::AttrSet& next_state_vars) const;
   
   jet::AttrSet state_vars() const;
   jet::AttrSet next_state_vars() const;
@@ -37,6 +41,14 @@ class StateMap
   std::vector<jet::Attr> _state_vars;
   std::vector<jet::Attr> _next_state_vars;
 
+  jet::Attr map_var(jet::Attr var,
+                    const std::vector<jet::Attr>& from,
+                    const std::vector<jet::Attr>& to) const;
+
+  jet::AttrSet map_vars(const jet::AttrSet& vars,
+                        const std::vector<jet::Attr>& from,
+                        const std::vector<jet::Attr>& to) const;
+  
   std::vector<std::pair<size_t, size_t>> _dfa_bounds;
 
   Assignment encode(const DFAState& state,
