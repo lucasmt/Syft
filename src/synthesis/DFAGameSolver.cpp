@@ -1,6 +1,7 @@
 #include "DFAGameSolver.h"
 
 #include <memory>
+#include <random>
 
 #include "SkolemFunction.hpp"
 #include "SynthesisResult.hpp"
@@ -46,18 +47,26 @@ void print_dfa(const SymbolicDFA& dfa, const SyftMgr& m)
   jet::AttrSet next_state_vars = dfa.output_vars().differenceWith(sys_vars);
   
   std::cout << "State vars: "
+            << state_vars.toStringWith("z")
+            << " or "
             << m.bdd_dict->cubeOfVars(state_vars)
             << std::endl;
 
   std::cout << "Environment vars: "
+            << env_vars.toStringWith("x")
+            << " or "
             << m.bdd_dict->cubeOfVars(env_vars)
             << std::endl;
   
   std::cout << "System vars: "
+            << sys_vars.toStringWith("y")
+            << " or "
             << m.bdd_dict->cubeOfVars(sys_vars)
             << std::endl;
 
   std::cout << "Next-State vars: "
+            << next_state_vars.toStringWith("z'")
+            << " or "
             << m.bdd_dict->cubeOfVars(next_state_vars)
             << std::endl;
 
@@ -66,6 +75,68 @@ void print_dfa(const SymbolicDFA& dfa, const SyftMgr& m)
             << std::endl;
   
   std::cout << "Accepting states: " << dfa.accepting_states() << std::endl;
+}
+
+Assignment random_assignment(const jet::AttrSet& vars,
+                             std::mt19937& rng,
+                             std::bernoulli_distribution& dist)
+{
+  vector<jet::Attr> assigned_to_true;
+
+  for (jet::Attr var : vars)
+  {
+    if (dist(rng))
+      assigned_to_true.push_back(var);
+  }
+
+  return Assignment(jet::AttrSet(assigned_to_true));
+}
+
+void print_example_play(const vector<SkolemFunction>& strategy,
+                        const SyftMgr& mgr,
+                        const Assignment& initial_state)
+{
+  std::mt19937 rng;
+  rng.seed(std::random_device()());
+  std::bernoulli_distribution dist(0.5);
+
+  Assignment assignment = initial_state;
+
+  std::cout << "Initial state: "
+            << assignment.assignedToTrue().toStringWith("z")
+            << std::endl;
+  
+  for (auto it = strategy.rbegin(); it != strategy.rend(); ++it)
+  {
+    SkolemFunction one_step_strategy = *it;
+    Assignment env_assignment = random_assignment(mgr.var_partition.env_vars(),
+                                                  rng,
+                                                  dist);
+
+    std::cout << "Input: "
+              << env_assignment.assignedToTrue().toStringWith("x")
+              << std::endl;
+    
+    assignment &= env_assignment;
+    Assignment output_assignment = one_step_strategy(assignment);
+
+    std::cout << "Output: " <<
+      output_assignment
+      .assignedToTrue()
+      .intersectWith(mgr.var_partition.sys_vars())
+      .toStringWith("y") << std::endl;
+    
+    jet::AttrSet assigned_to_true =
+      output_assignment
+      .assignedToTrue()
+      .differenceWith(mgr.var_partition.sys_vars());
+    
+    assignment = Assignment(mgr.state_map.unprime(assigned_to_true));
+
+    std::cout << "Next state: "
+              << assignment.assignedToTrue().toStringWith("z")
+              << std::endl;
+  }
 }
 
 DFAGameSolver::DFAGameSolver(SyftMgr m, FactoredSynthesizer s)
@@ -178,12 +249,17 @@ bool DFAGameSolver::realizability(const vector<SymbolicDFA>& dfas) const {
     //print_winning_states(winning_states.back());
 
     reached_initial = mgr.bdd_dict->eval(winning_states.back(),
-					 initial_assignment);
+                                         initial_assignment);
   }
   while (!reached_fixpoint(winning_states) && !reached_initial);
 
-  //print_strategy(strategy, mgr);
-  if (reached_initial) print_strategy_length(strategy);
+  if (reached_initial)
+  {
+    //print_strategy(strategy, mgr);
+    print_strategy_length(strategy);
+
+    //print_example_play(strategy, mgr, initial_assignment);
+  }
   
   return reached_initial;
 }

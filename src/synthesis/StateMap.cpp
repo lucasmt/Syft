@@ -32,18 +32,53 @@ StateMap::StateMap(const vector<DFA>& dfas,
   }
 }
 
+jet::Attr StateMap::map_var(jet::Attr var,
+                            const std::vector<jet::Attr>& from,
+                            const std::vector<jet::Attr>& to) const
+{
+  auto position = lower_bound(from.begin(), from.end(), var);
+
+  if (position == from.end() || *position != var)
+    throw invalid_argument("Tried to prime non-state variable: " + var.id());
+
+  size_t index = position - from.begin();
+
+  return to[index];
+}
+
+jet::AttrSet StateMap::map_vars(const jet::AttrSet& vars,
+                                const std::vector<jet::Attr>& from,
+                                const std::vector<jet::Attr>& to) const
+{
+  std::vector<jet::Attr> new_vars;
+
+  for (jet::Attr var : vars)
+  {
+    new_vars.push_back(map_var(var, from, to));
+  }
+
+  return jet::AttrSet(new_vars);
+}
 
 jet::Attr StateMap::prime(jet::Attr var) const
 {
-  auto position = lower_bound(_state_vars.begin(), _state_vars.end(), var);
+  return map_var(var, _state_vars, _next_state_vars);
+}
 
-  if (position == _state_vars.end() || *position != var)
-    throw invalid_argument("Tried to prime non-state variable: " + var.id());
-  
-  size_t index = position - _state_vars.begin();
-  
-  return _next_state_vars[index];
-}  
+jet::Attr StateMap::unprime(jet::Attr var) const
+{
+  return map_var(var, _next_state_vars, _state_vars);
+}
+
+jet::AttrSet StateMap::prime(const jet::AttrSet& vars) const
+{
+  return map_vars(vars, _state_vars, _next_state_vars);
+}
+
+jet::AttrSet StateMap::unprime(const jet::AttrSet& vars) const
+{
+  return map_vars(vars, _next_state_vars, _state_vars);
+}
 
 jet::AttrSet StateMap::state_vars() const
 {
