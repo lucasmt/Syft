@@ -28,6 +28,11 @@ void print_strategy(const vector<SkolemFunction>& strategy, const SyftMgr& m)
   }
 }
 
+void print_strategy_length(const vector<SkolemFunction>& strategy)
+{
+  std::cout << "System wins in " << strategy.size() << " moves." << std::endl;
+}
+
 void print_winning_states(const BDD& bdd)
 {
   std::cout << "Winning states: " << bdd << std::endl;
@@ -150,12 +155,12 @@ bool DFAGameSolver::realizability(const vector<SymbolicDFA>& dfas) const {
 
   // Initial set of winning states (maybe can maintain in factored form?)
   for (const SymbolicDFA& dfa : dfas) {
-    print_dfa(dfa, mgr);
+    //print_dfa(dfa, mgr);
     initial_assignment &= dfa.initial_assignment();
     winning_states[0] &= dfa.accepting_states();
   }
 
-  print_winning_states(winning_states.back());
+  //print_winning_states(winning_states.back());
 
   bool reached_initial = false;
   
@@ -170,14 +175,15 @@ bool DFAGameSolver::realizability(const vector<SymbolicDFA>& dfas) const {
     winning_states.push_back(old_winning | new_winning);
     strategy.push_back(result.skolemFunction);
 
-    print_winning_states(winning_states.back());
+    //print_winning_states(winning_states.back());
 
     reached_initial = mgr.bdd_dict->eval(winning_states.back(),
-                                              initial_assignment);
+					 initial_assignment);
   }
   while (!reached_fixpoint(winning_states) && !reached_initial);
 
-  print_strategy(strategy, mgr);
+  //print_strategy(strategy, mgr);
+  if (reached_initial) print_strategy_length(strategy);
   
   return reached_initial;
 }
