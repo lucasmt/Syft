@@ -56,10 +56,10 @@ VarPartition VarPartition::load(const string& partition_file) {
   string line;
   while(getline(f, line)){
     if(f.is_open()){
-      if(line.compare(0, 8, ".inputs:") == 0){
+      if(line.compare(0, 7, ".inputs") == 0){
 	split(inputs, line, is_any_of(" "));
       }
-      else if(line.compare(0, 9, ".outputs:") == 0){
+      else if(line.compare(0, 8, ".outputs") == 0){
 	split(outputs, line, is_any_of(" "));
       }
       else{
