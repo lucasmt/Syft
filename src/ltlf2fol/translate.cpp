@@ -1,6 +1,7 @@
 #include "ltlf2fol.h"
 #include <assert.h>
 #include <fstream>
+#include <iostream>
 
 #define MAXN 1000000
 char in[MAXN];
@@ -9,44 +10,59 @@ using namespace std;
 
 int main (int argc, char ** argv)
 {
+  string StrLine;
+  std::string input;
+  std::string outprefix;
+  std::string format;
+  assert(argc == 4);
+  input = argv[1];
+  outprefix = argv[2];
+  format = argv[3];
+  ifstream myfile(input);
+  if (!myfile.is_open()) //判断文件是否存在及可读
+  {
+    printf("unreadable file!");
+    return -1;
+  }
+
+  size_t i = 0;
   
-		string StrLine;
-		std::string input;
-    std::string format;
-		assert(argc == 3);
-		input = argv[1];
-    format = argv[2];
-		ifstream myfile(input);
-		if (!myfile.is_open()) //判断文件是否存在及可读
-		{
-		    printf("unreadable file!");
-		    return -1;
-		}
-		getline(myfile, StrLine);
-		myfile.close(); //关闭文件
+  while (getline(myfile, StrLine))
+  {
+    ofstream out(outprefix + "_" + to_string(i) + ".mona");
+
+    //myfile.close(); //关闭文件
     strcpy (in, StrLine.c_str());
-    printf ("#%s\n", in);
-    
+    //out << "#" << in << endl;
+
     ltl_formula *root = getAST (in);
     ltl_formula *bnfroot = bnf (root);
     ltl_formula *newroot;
-    printf ("#%s\n", to_string (bnfroot).c_str ());
+
+    //out << "#" << to_string(bnfroot).c_str() << endl;
+
     if(format == "NNF"){
-      printf ("#NNF format\n");
-      newroot = nnf (bnfroot) ;   
+      out << "#NNF format" << endl;
+      newroot = nnf (bnfroot);   
     }
     else{
-      printf ("#BNF format\n");
+      out << "#BNF format" << endl;
       newroot = bnfroot;
     }
-    
-    printf ("#%s\n", to_string (newroot).c_str ());
-    ltlf2fol (newroot);
-    
-    
+
+    //out << "#" << to_string(newroot).c_str() << endl;
+
+    ltlf2fol (newroot, out);
 
     // printf ("%s\n", res.c_str ());
     destroy_formula (root);
     destroy_formula (newroot);
     //destroy_formula (nnfroot);
+
+    out.close();
+
+    ++i;
+  }
+
+  myfile.close();
 }

@@ -10,14 +10,13 @@
 #include <set>
 #include <assert.h>
 #include <iostream>
-#include <fstream>
 #include <boost/algorithm/string.hpp>
 
 using namespace std;
 #define MAXN 1000000
 
 
-void ltlf2fol (ltl_formula *root)
+void ltlf2fol (ltl_formula *root, ofstream& out)
 {
   int c = 1;
   string res;
@@ -25,29 +24,29 @@ void ltlf2fol (ltl_formula *root)
   set<string> P = get_alphabet (root);
   if(!P.empty()){
     // cout<<"var2 ALIVE, ";
-    cout<<"m2l-str;"<<endl;
-    cout<<"var2 ";
-    print_alphabet_no_comma(root);
-    cout<<";"<<endl;
-    // cout<<"allpos ALIVE;"<<endl;
-    // cout<<"0 in ALIVE;"<<endl;
+    out<<"m2l-str;"<<endl;
+    out<<"var2 ";
+    print_alphabet_no_comma(root, out);
+    out<<";"<<endl;
+    // out<<"allpos ALIVE;"<<endl;
+    // out<<"0 in ALIVE;"<<endl;
   }
   
   res = trans_fol(root, 0, c);
-  cout<<res<<";"<<endl;
+  out<<res<<";"<<endl;
   
 
 }
 
-void print_alphabet_no_comma (ltl_formula* root){
+void print_alphabet_no_comma (ltl_formula* root, ofstream& out){
   set<string> P = get_alphabet (root);
   if(!P.empty()){
     set<string>::iterator it = P.begin ();
-    // cout<<toupper(*it);
-    cout<<up(*it);
+    // out<<toupper(*it);
+    out<<up(*it);
     it++;
     while (it != P.end ()){
-      cout<<", "<<up(*it);
+      out<<", "<<up(*it);
       it++;
     }
   }
@@ -58,7 +57,7 @@ string alphabet_no_comma (ltl_formula* root){
   set<string> P = get_alphabet (root);
   if(!P.empty()){
     set<string>::iterator it = P.begin ();
-    // cout<<toupper(*it);
+    // out<<toupper(*it);
     res += up(*it);
     it++;
     while (it != P.end ()){
@@ -69,43 +68,43 @@ string alphabet_no_comma (ltl_formula* root){
   return res;
 }
 
-void print_alphabet (ltl_formula* root){
+void print_alphabet (ltl_formula* root, ofstream& out){
   set<string> P = get_alphabet (root);
   if(!P.empty()){
     set<string>::iterator it = P.begin ();
-    // cout<<toupper(*it);
-    cout<<", "<<up(*it);
+    // out<<toupper(*it);
+    out<<", "<<up(*it);
     it++;
     while (it != P.end ()){
-      cout<<", "<<up(*it);
+      out<<", "<<up(*it);
       it++;
     }
   }
 }
 
-void print_alphabet_not (ltl_formula* root){
+void print_alphabet_not (ltl_formula* root, ofstream& out){
   set<string> P = get_alphabet (root);
   if(!P.empty()){
     set<string>::iterator it = P.begin ();
-    // cout<<toupper(*it);
-    cout<<", "<<up(*it)<<"\\{p}";
+    // out<<toupper(*it);
+    out<<", "<<up(*it)<<"\\{p}";
     it++;
     while (it != P.end ()){
-      cout<<", "<<up(*it);
+      out<<", "<<up(*it);
       it++;
     }
   }
 }
 
-void printvars (ltl_formula* root){
+void printvars (ltl_formula* root, ofstream& out){
   set<string> P = get_alphabet (root);
   if(!P.empty()){
     set<string>::iterator it = P.begin ();
-    // cout<<toupper(*it);
-    cout<<", var2 "<<up(*it);
+    // out<<toupper(*it);
+    out<<", var2 "<<up(*it);
     it++;
     while (it != P.end ()){
-      cout<<", var2 "<<up(*it);
+      out<<", var2 "<<up(*it);
       it++;
     }
   }
@@ -222,7 +221,7 @@ string trans_fol(ltl_formula* root, int t, int& c){
         default:
           break;
   }
-  // cout<<res<<endl;
+  // out<<res<<endl;
   return res;
 }
 
@@ -231,7 +230,7 @@ string up(string a){
 }
 
 
-
+/*
 char in[MAXN];
 
 int main (int argc, char ** argv)
@@ -280,9 +279,4 @@ int main (int argc, char ** argv)
     destroy_formula (newroot);
     //destroy_formula (nnfroot);
 }
-
-
-
-
-
-
+*/

@@ -14,7 +14,7 @@ class DFAGameSolver
 {
 public:
   DFAGameSolver(SyftMgr m, FactoredSynthesizer s);
-
+  
   bool realizability(const std::vector<SymbolicDFA>& dfas) const;
 	
   /*my::optional<std::unordered_map<unsigned int, BDD>> realizablity_variant(
@@ -27,7 +27,10 @@ public:
 private:
   SyftMgr mgr;
   FactoredSynthesizer synthesizer;
-    
+
+  size_t node_count(const std::vector<SymbolicDFA>& dfa) const;
+  size_t node_count(const std::vector<SkolemFunction>& strategy) const;
+  
   bool reached_fixpoint(const std::vector<BDD>& winning_states) const;
   BDD prime(const BDD& states) const;
   BDD for_all(const jet::AttrSet& vars, const BDD& b) const;

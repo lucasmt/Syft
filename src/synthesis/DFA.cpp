@@ -69,7 +69,7 @@ DFA DFA::load_from_file(const string& base_filename,
                         size_t index,
                         const VarPartition& var_partition)
 {
-  string full_filename = base_filename + to_string(index) + ".dfa";
+  string full_filename = base_filename + "_" + to_string(index) + ".dfa";
   ifstream f(full_filename);
 
   if (!f.is_open())

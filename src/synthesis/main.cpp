@@ -110,10 +110,8 @@ int main(int argc, char ** argv){
 
     FactoredSynthesizer synthesizer(mgr.bdd_dict, move(join_algorithm));
     DFAGameSolver solver(move(mgr), move(synthesizer));
-    
+
     bool realizable = solver.realizability(symbolic_dfas);
 
-    cout << (realizable ? "Realizable" : "Unrealizable") << endl;
-    
     return 0;
 }

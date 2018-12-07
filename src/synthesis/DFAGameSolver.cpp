@@ -217,10 +217,38 @@ BDD DFAGameSolver::prime(const BDD& states) const
   return primed_states;
 }
 
+size_t DFAGameSolver::node_count(const vector<SkolemFunction>& strategy) const
+{
+  vector<BDD> bdds;
+
+  for (const SkolemFunction& sf : strategy)
+  {
+    for (jet::Attr var : sf.outputVars())
+    {
+      bdds.push_back(sf[var]);
+    }
+  }
+
+  return mgr.cudd_mgr.nodeCount(bdds);
+}
+
+size_t DFAGameSolver::node_count(const vector<SymbolicDFA>& dfas) const
+{
+  vector<BDD> bdds;
+
+  for (const SymbolicDFA& dfa : dfas)
+  {
+    bdds.push_back(dfa.transition_relation());
+    bdds.push_back(dfa.accepting_states());
+  }
+
+  return mgr.cudd_mgr.nodeCount(bdds);
+}
+
 bool DFAGameSolver::realizability(const vector<SymbolicDFA>& dfas) const {
 
   vector<SkolemFunction> strategy;
-
+  
   Assignment initial_assignment;
   vector<BDD> winning_states(1, mgr.cudd_mgr.bddOne());
 
@@ -232,6 +260,10 @@ bool DFAGameSolver::realizability(const vector<SymbolicDFA>& dfas) const {
   }
 
   //print_winning_states(winning_states.back());
+
+  std::cout << "Game size (BDD nodes): "
+            << node_count(dfas)
+            << std::endl;
 
   bool reached_initial = false;
   
@@ -253,6 +285,7 @@ bool DFAGameSolver::realizability(const vector<SymbolicDFA>& dfas) const {
   }
   while (!reached_fixpoint(winning_states) && !reached_initial);
 
+  /*
   if (reached_initial)
   {
     //print_strategy(strategy, mgr);
@@ -260,7 +293,21 @@ bool DFAGameSolver::realizability(const vector<SymbolicDFA>& dfas) const {
 
     //print_example_play(strategy, mgr, initial_assignment);
   }
-  
+  */
+
+  std::cout << (reached_initial ? "Realizable" : "Unrealizable") << std::endl;
+
+  if (reached_initial)
+  {
+    std::cout << "Strategy size (BDD nodes): "
+              << node_count(strategy)
+              << std::endl;
+
+    std::cout << "Strategy length (steps): "
+              << strategy.size()
+              << std::endl;
+  }
+
   return reached_initial;
 }
 
