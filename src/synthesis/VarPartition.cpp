@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <fstream>
+#include <sstream>
 #include <stdexcept>
 
 #include <boost/algorithm/string.hpp>
@@ -13,6 +14,7 @@ using std::ifstream;
 using std::max;
 using std::runtime_error;
 using std::string;
+using std::stringstream;
 using std::vector;
 
 VarPartition::VarPartition(const vector<string>& env_names,
@@ -103,6 +105,35 @@ jet::AttrSet VarPartition::from_names(const vector<string>& names) const
   }
 
   return jet::AttrSet(vars);
+}
+
+string VarPartition::get_name(jet::Attr var) const
+{
+  return _var_to_name.at(var);
+}
+
+string VarPartition::display(const jet::AttrSet& vars) const
+{
+  stringstream sstream;
+
+  sstream << "{ ";
+
+  jet::AttrSet::const_iterator it = vars.begin();
+
+  while (it != vars.end())
+    {
+      sstream << get_name(*it);
+      it++;
+
+      if (it != vars.end())
+	{
+	  sstream << ", ";
+	}
+    }
+
+  sstream << " }";
+
+  return sstream.str();
 }
 
 jet::AttrSet VarPartition::env_vars(const vector<string>& names) const

@@ -27,6 +27,9 @@ public:
   jet::Attr from_name(const std::string& name) const;
   jet::AttrSet from_names(const std::vector<std::string>& names) const;
 
+  std::string get_name(jet::Attr var) const;
+  std::string display(const jet::AttrSet& vars) const;
+
   jet::AttrSet env_vars(const std::vector<std::string>& names) const;
   jet::AttrSet sys_vars(const std::vector<std::string>& names) const;
 
