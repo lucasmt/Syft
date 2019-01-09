@@ -35,9 +35,14 @@ public:
 
 private:
 
-  std::shared_ptr<BDDDict> construct_vars(const Cudd& cudd_mgr,
-                                          const VarPartition& var_partition,
-                                          const StateMap& state_map) const;
+  std::shared_ptr<BDDDict> construct_vars(const std::vector<DFA>& dfas,
+					  const Cudd& cudd_mgr,
+					  const VarPartition& var_partition,
+					  const StateMap& state_map) const;
+  
+  std::shared_ptr<BDDDict> construct_vars_0(const Cudd& cudd_mgr,
+					    const VarPartition& var_partition,
+					    const StateMap& state_map) const;
 
   ADD add_of_var(jet::Attr var) const;
   

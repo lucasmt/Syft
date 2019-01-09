@@ -7,9 +7,40 @@ using std::shared_ptr;
 using std::unique_ptr;
 using std::vector;
 
-shared_ptr<BDDDict> SyftMgr::construct_vars(const Cudd& cudd_mgr,
+shared_ptr<BDDDict> SyftMgr::construct_vars(const vector<DFA>& dfas,
+					    const Cudd& cudd_mgr,
                                             const VarPartition& var_partition,
                                             const StateMap& state_map) const
+{
+  jet::AttrSet vertices =
+    var_partition.env_vars()
+    .unionWith(var_partition.sys_vars())
+    .unionWith(state_map.state_vars())
+    .unionWith(state_map.next_state_vars());
+
+  vector<jet::AttrSet> hyperedges;
+  hyperedges.reserve(dfas.size());
+
+  for (const DFA& dfa : dfas)
+  {
+    jet::AttrSet all_vars =
+      dfa.env_vars()
+      .unionWith(dfa.sys_vars())
+      .unionWith(state_map.state_vars(dfa.index()))
+      .unionWith(state_map.next_state_vars(dfa.index()));
+    
+    hyperedges.push_back(all_vars);
+  }
+
+  jet::AttrRanking ordering =
+    jet::AttrRanking::MCS(vertices, hyperedges);//.reverse();
+  
+  return make_shared<BDDDict>(cudd_mgr, ordering);
+}
+
+shared_ptr<BDDDict> SyftMgr::construct_vars_0(const Cudd& cudd_mgr,
+					      const VarPartition& var_partition,
+					      const StateMap& state_map) const
 {
   vector<jet::Attr> ordering;
 
@@ -43,7 +74,7 @@ shared_ptr<BDDDict> SyftMgr::construct_vars(const Cudd& cudd_mgr,
 SyftMgr::SyftMgr(const vector<DFA>& dfas, VarPartition partition)
   : var_partition(move(partition))
   , state_map(dfas, var_partition)
-  , bdd_dict(construct_vars(cudd_mgr, var_partition, state_map))
+  , bdd_dict(construct_vars_0(cudd_mgr, var_partition, state_map))
 {}
 
 ADD SyftMgr::add_of_var(jet::Attr var) const
