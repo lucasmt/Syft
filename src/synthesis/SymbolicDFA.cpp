@@ -32,6 +32,8 @@ size_t SymbolicDFA::index() const { return _index; }
 
 jet::AttrSet SymbolicDFA::env_vars() const { return _env_vars; }
 jet::AttrSet SymbolicDFA::sys_vars() const { return _sys_vars; }
+jet::AttrSet SymbolicDFA::state_vars() const { return _state_vars; }
+jet::AttrSet SymbolicDFA::next_state_vars() const { return _next_state_vars; }
 jet::AttrSet SymbolicDFA::input_vars() const { return _input_vars; }
 jet::AttrSet SymbolicDFA::output_vars() const { return _output_vars; }
 

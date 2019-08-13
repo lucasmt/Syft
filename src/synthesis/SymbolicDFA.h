@@ -44,6 +44,8 @@ public:
   
   jet::AttrSet env_vars() const;
   jet::AttrSet sys_vars() const;
+  jet::AttrSet state_vars() const;
+  jet::AttrSet next_state_vars() const;
   jet::AttrSet input_vars() const;
   jet::AttrSet output_vars() const;
 
