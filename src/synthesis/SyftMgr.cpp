@@ -70,12 +70,70 @@ shared_ptr<BDDDict> SyftMgr::construct_vars_0(const Cudd& cudd_mgr,
 
   return make_shared<BDDDict>(cudd_mgr, jet::AttrRanking(ordering));
 }
+
+/* Fully interleave state variables */
+shared_ptr<BDDDict> SyftMgr::construct_vars_1(const Cudd& cudd_mgr,
+					      const VarPartition& var_partition,
+					      const StateMap& state_map) const
+{
+  vector<jet::Attr> ordering;
+
+  jet::AttrSet state_vars = state_map.state_vars();
+  jet::AttrSet next_state_vars = state_map.next_state_vars();
+
+  auto it1 = state_vars.begin(), it2 = next_state_vars.begin();
+
+  while (it1 != state_vars.end()) {
+    ordering.push_back(*it1);
+    ordering.push_back(*it2);
+    ++it1;
+    ++it2;
+  }
+
+  jet::AttrSet env_vars = var_partition.env_vars();
+  jet::AttrSet sys_vars = var_partition.sys_vars();
+
+  ordering.insert(ordering.end(), env_vars.begin(), env_vars.end());
+  ordering.insert(ordering.end(), sys_vars.begin(), sys_vars.end());
+
+  return make_shared<BDDDict>(cudd_mgr, jet::AttrRanking(ordering));
+}
+
+/* Interleave only the DFAs */
+shared_ptr<BDDDict> SyftMgr::construct_vars_2(const vector<DFA>& dfas,
+                                              const Cudd& cudd_mgr,
+					      const VarPartition& var_partition,
+					      const StateMap& state_map) const
+{
+  vector<jet::Attr> ordering;
+
+  for (const DFA& dfa : dfas)
+  {
+    jet::AttrSet state_vars = state_map.state_vars(dfa);
+    jet::AttrSet next_state_vars = state_map.next_state_vars(dfa);
+
+    ordering.insert(ordering.end(), state_vars.begin(), state_vars.end());
+    ordering.insert(ordering.end(),
+                    next_state_vars.begin(),
+                    next_state_vars.end());
+  }
+
+  jet::AttrSet env_vars = var_partition.env_vars();
+  jet::AttrSet sys_vars = var_partition.sys_vars();
+
+  ordering.insert(ordering.end(), env_vars.begin(), env_vars.end());
+  ordering.insert(ordering.end(), sys_vars.begin(), sys_vars.end());
+
+  return make_shared<BDDDict>(cudd_mgr, jet::AttrRanking(ordering));
+}
     
 SyftMgr::SyftMgr(const vector<DFA>& dfas, VarPartition partition)
   : var_partition(move(partition))
   , state_map(dfas, var_partition)
   , bdd_dict(construct_vars_0(cudd_mgr, var_partition, state_map))
-{}
+{
+  cudd_mgr.AutodynEnable();
+}
 
 ADD SyftMgr::add_of_var(jet::Attr var) const
 {

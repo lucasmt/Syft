@@ -44,6 +44,15 @@ private:
 					    const VarPartition& var_partition,
 					    const StateMap& state_map) const;
 
+  std::shared_ptr<BDDDict> construct_vars_1(const Cudd& cudd_mgr,
+					    const VarPartition& var_partition,
+					    const StateMap& state_map) const;
+
+  std::shared_ptr<BDDDict> construct_vars_2(const std::vector<DFA>& dfas,
+                                            const Cudd& cudd_mgr,
+                                            const VarPartition& var_partition,
+                                            const StateMap& state_map) const;
+
   ADD add_of_var(jet::Attr var) const;
   
   ADD build_add_table(std::vector<std::unique_ptr<ADD>>& table,
