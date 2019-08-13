@@ -1,6 +1,7 @@
 #include "DFAGameSolver.h"
 
 #include <memory>
+#include <numeric>
 #include <random>
 
 #include "SkolemFunction.hpp"
@@ -245,8 +246,9 @@ size_t DFAGameSolver::node_count(const vector<SymbolicDFA>& dfas) const
   return mgr.cudd_mgr.nodeCount(bdds);
 }
 
-bool DFAGameSolver::realizability(const vector<SymbolicDFA>& dfas) const {
-
+bool DFAGameSolver::realizability(const vector<SymbolicDFA>& dfas,
+                                  const unique_ptr<Logger>& logger) const
+{
   vector<SkolemFunction> strategy;
   
   Assignment initial_assignment;
@@ -254,20 +256,15 @@ bool DFAGameSolver::realizability(const vector<SymbolicDFA>& dfas) const {
 
   // Initial set of winning states (maybe can maintain in factored form?)
   for (const SymbolicDFA& dfa : dfas) {
-    //print_dfa(dfa, mgr);
     initial_assignment &= dfa.initial_assignment();
     winning_states[0] &= dfa.accepting_states();
   }
 
-  //print_winning_states(winning_states.back());
-
-  std::cout << "Game size (BDD nodes): "
-            << node_count(dfas)
-            << std::endl;
-
   bool reached_initial = false;
   
   do {
+    logger->record_winning_states(winning_states.back());
+
     SynthesisResult result =
       one_step_synthesis(dfas, prime(winning_states.back()));
         
@@ -278,34 +275,14 @@ bool DFAGameSolver::realizability(const vector<SymbolicDFA>& dfas) const {
     winning_states.push_back(old_winning | new_winning);
     strategy.push_back(result.skolemFunction);
 
-    //print_winning_states(winning_states.back());
-
     reached_initial = mgr.bdd_dict->eval(winning_states.back(),
                                          initial_assignment);
   }
   while (!reached_fixpoint(winning_states) && !reached_initial);
 
-  /*
   if (reached_initial)
   {
-    //print_strategy(strategy, mgr);
-    print_strategy_length(strategy);
-
-    //print_example_play(strategy, mgr, initial_assignment);
-  }
-  */
-
-  std::cout << (reached_initial ? "Realizable" : "Unrealizable") << std::endl;
-
-  if (reached_initial)
-  {
-    std::cout << "Strategy size (BDD nodes): "
-              << node_count(strategy)
-              << std::endl;
-
-    std::cout << "Strategy length (steps): "
-              << strategy.size()
-              << std::endl;
+    logger->record_strategy(strategy, mgr);
   }
 
   return reached_initial;

@@ -8,6 +8,7 @@
 #include "BDDDict.hpp"
 #include "FactoredSynthesizer.hpp"
 
+#include "Logger.h"
 #include "SymbolicDFA.h"
 
 class DFAGameSolver
@@ -15,7 +16,8 @@ class DFAGameSolver
 public:
   DFAGameSolver(SyftMgr m, FactoredSynthesizer s);
   
-  bool realizability(const std::vector<SymbolicDFA>& dfas) const;
+  bool realizability(const std::vector<SymbolicDFA>& dfas,
+                     const std::unique_ptr<Logger>& logger) const;
 	
   /*my::optional<std::unordered_map<unsigned int, BDD>> realizablity_variant(
     const SymbolicDFA& dfa);*/
