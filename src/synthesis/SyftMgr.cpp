@@ -7,10 +7,12 @@ using std::shared_ptr;
 using std::unique_ptr;
 using std::vector;
 
-shared_ptr<BDDDict> SyftMgr::construct_vars(const vector<DFA>& dfas,
-					    const Cudd& cudd_mgr,
-                                            const VarPartition& var_partition,
-                                            const StateMap& state_map) const
+/* Order BDD variables using the MCS heuristic */
+shared_ptr<BDDDict> SyftMgr::construct_vars_mcs(
+  const vector<DFA>& dfas,
+  const Cudd& cudd_mgr,
+  const VarPartition& var_partition,
+  const StateMap& state_map) const
 {
   jet::AttrSet vertices =
     var_partition.env_vars()
@@ -38,25 +40,16 @@ shared_ptr<BDDDict> SyftMgr::construct_vars(const vector<DFA>& dfas,
   return make_shared<BDDDict>(cudd_mgr, ordering);
 }
 
-shared_ptr<BDDDict> SyftMgr::construct_vars_0(const Cudd& cudd_mgr,
-					      const VarPartition& var_partition,
-					      const StateMap& state_map) const
+/* Order BDD variables in order: state, environment, system, next-state */
+shared_ptr<BDDDict> SyftMgr::construct_vars_in_order(
+  const Cudd& cudd_mgr,
+  const VarPartition& var_partition,
+  const StateMap& state_map) const
 {
   vector<jet::Attr> ordering;
 
   jet::AttrSet state_vars = state_map.state_vars();
   jet::AttrSet next_state_vars = state_map.next_state_vars();
-
-  /*
-  auto it1 = state_vars.begin(), it2 = next_state_vars.begin();
-
-  while (it1 != state_vars.end()) {
-    ordering.push_back(*it1);
-    ordering.push_back(*it2);
-    ++it1;
-    ++it2;
-  }
-  */
 
   jet::AttrSet env_vars = var_partition.env_vars();
   jet::AttrSet sys_vars = var_partition.sys_vars();
@@ -71,10 +64,11 @@ shared_ptr<BDDDict> SyftMgr::construct_vars_0(const Cudd& cudd_mgr,
   return make_shared<BDDDict>(cudd_mgr, jet::AttrRanking(ordering));
 }
 
-/* Fully interleave state variables */
-shared_ptr<BDDDict> SyftMgr::construct_vars_1(const Cudd& cudd_mgr,
-					      const VarPartition& var_partition,
-					      const StateMap& state_map) const
+/* Order BDD variables by fully interleaving state variables */
+shared_ptr<BDDDict> SyftMgr::construct_vars_fully_interleaved(
+  const Cudd& cudd_mgr,
+  const VarPartition& var_partition,
+  const StateMap& state_map) const
 {
   vector<jet::Attr> ordering;
 
@@ -99,11 +93,12 @@ shared_ptr<BDDDict> SyftMgr::construct_vars_1(const Cudd& cudd_mgr,
   return make_shared<BDDDict>(cudd_mgr, jet::AttrRanking(ordering));
 }
 
-/* Interleave only the DFAs */
-shared_ptr<BDDDict> SyftMgr::construct_vars_2(const vector<DFA>& dfas,
-                                              const Cudd& cudd_mgr,
-					      const VarPartition& var_partition,
-					      const StateMap& state_map) const
+/* Order BDD variables by interleaving only the DFAs */
+shared_ptr<BDDDict> SyftMgr::construct_vars_interleaved_dfas(
+  const vector<DFA>& dfas,
+  const Cudd& cudd_mgr,
+  const VarPartition& var_partition,
+  const StateMap& state_map) const
 {
   vector<jet::Attr> ordering;
 
@@ -130,9 +125,9 @@ shared_ptr<BDDDict> SyftMgr::construct_vars_2(const vector<DFA>& dfas,
 SyftMgr::SyftMgr(const vector<DFA>& dfas, VarPartition partition)
   : var_partition(move(partition))
   , state_map(dfas, var_partition)
-  , bdd_dict(construct_vars_0(cudd_mgr, var_partition, state_map))
+  , bdd_dict(construct_vars_in_order(cudd_mgr, var_partition, state_map))
 {
-  cudd_mgr.AutodynEnable();
+  cudd_mgr.AutodynEnable(); // turn on dynamic variable reordering
 }
 
 ADD SyftMgr::add_of_var(jet::Attr var) const

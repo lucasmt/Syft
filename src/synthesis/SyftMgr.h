@@ -35,23 +35,27 @@ public:
 
 private:
 
-  std::shared_ptr<BDDDict> construct_vars(const std::vector<DFA>& dfas,
-					  const Cudd& cudd_mgr,
-					  const VarPartition& var_partition,
-					  const StateMap& state_map) const;
+  std::shared_ptr<BDDDict> construct_vars_mcs(
+    const std::vector<DFA>& dfas,
+    const Cudd& cudd_mgr,
+    const VarPartition& var_partition,
+    const StateMap& state_map) const;
   
-  std::shared_ptr<BDDDict> construct_vars_0(const Cudd& cudd_mgr,
-					    const VarPartition& var_partition,
-					    const StateMap& state_map) const;
+  std::shared_ptr<BDDDict> construct_vars_in_order(
+    const Cudd& cudd_mgr,
+    const VarPartition& var_partition,
+    const StateMap& state_map) const;
 
-  std::shared_ptr<BDDDict> construct_vars_1(const Cudd& cudd_mgr,
-					    const VarPartition& var_partition,
-					    const StateMap& state_map) const;
+  std::shared_ptr<BDDDict> construct_vars_fully_interleaved(
+    const Cudd& cudd_mgr,
+    const VarPartition& var_partition,
+    const StateMap& state_map) const;
 
-  std::shared_ptr<BDDDict> construct_vars_2(const std::vector<DFA>& dfas,
-                                            const Cudd& cudd_mgr,
-                                            const VarPartition& var_partition,
-                                            const StateMap& state_map) const;
+  std::shared_ptr<BDDDict> construct_vars_interleaved_dfas(
+    const std::vector<DFA>& dfas,
+    const Cudd& cudd_mgr,
+    const VarPartition& var_partition,
+    const StateMap& state_map) const;
 
   ADD add_of_var(jet::Attr var) const;
   

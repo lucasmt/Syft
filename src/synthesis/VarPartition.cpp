@@ -25,6 +25,7 @@ VarPartition::VarPartition(const vector<string>& env_names,
 
   for (string name : env_names)
   {
+    // Assign unique ID to the variable
     jet::Attr var(id);
     ++id;
 
@@ -35,6 +36,7 @@ VarPartition::VarPartition(const vector<string>& env_names,
 
   for (string name : sys_names)
   {
+    // Assign unique ID to the variable
     jet::Attr var(id);
     ++id;
 
@@ -75,9 +77,10 @@ VarPartition VarPartition::load(const string& partition_file) {
   }
   f.close();
 
-  inputs.erase(inputs.begin());
-  outputs.erase(outputs.begin());
+  inputs.erase(inputs.begin()); // remove ".inputs" token
+  outputs.erase(outputs.begin()); // remove ".outputs" token
 
+  // Ignore capitalization of variable names
   for (string& input : inputs) to_upper(input);
   for (string& output : outputs) to_upper(output);
   

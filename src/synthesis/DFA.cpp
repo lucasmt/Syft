@@ -76,7 +76,7 @@ DFA DFA::load_from_file(const string& base_filename,
     throw runtime_error("Unable to open file: " + full_filename);
 
   string line;
-  vector<string> fields; //temporary varibale
+  vector<string> fields; // temporary varibale
 
   vector<string> var_names;
   size_t number_of_states;
