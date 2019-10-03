@@ -38,3 +38,15 @@ Compilation Instructions for Syft using CMake
 3. Compile using the generated makefile:
 
    make
+   
+==== Instructions for IJCAI 2019 ====
+
+The modified version of Syft used in the paper "Partitioning Techniques in LTLf Synthesis" (Tabajara and Vardi, IJCAI 2019) is available in the branch `ijcai2019`. This version has additional dependencies that must be installed from source. To install this version, perform steps 0.1-0.4 above, and before building Syft as normal, perform the following additional steps:
+
+0.5 Install JET from:
+    https://bitbucket.org/lucas-mt/jet/
+    
+0.6 Install RSynth from the `remaster` branch of:
+    https://bitbucket.org/lucas-mt/rsynth/
+    
+0.7 If necessary, set the variables JET_ROOT and RSYNTH_ROOT in CMakeModules/Findjet.cmake and CMakeModules/Findrsynth.cmake, respectively.
