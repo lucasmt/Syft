@@ -12,13 +12,15 @@ using std::move;
 using std::cout;
 using std::endl;
 
-syn::syn(shared_ptr<Cudd> m, string filename, string partfile)
+syn::syn(shared_ptr<Cudd> m, string filename, string partfile, bool partial_observability)
 {
     //ctor
 
     //Cudd *p = &mgr;
     bdd = make_unique<DFA>(m);
-    bdd->initialize(filename, partfile);
+
+    bdd->initialize(filename, partfile, partial_observability);
+
     mgr = m;
     initializer();
 

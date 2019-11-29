@@ -14,7 +14,7 @@ class DFA
 
         std::shared_ptr<Cudd> mgr;
 
-        void initialize(std::string filename, std::string partfile);
+        void initialize(std::string filename, std::string partfile, bool partial_observability);
         //void initialize(std::string filename, std::string partfile, Cudd& manager);
         std::vector<item> bdd;
         void print_vec( std::vector <item> & v );
@@ -29,16 +29,19 @@ class DFA
 
         int nvars;
         std::vector<int> finalstates;
+	std::vector<int> nonfinalstates;
 	BDD finalstatesBDD;
         std::vector<BDD> res;
         std::vector<BDD> bddvars;
         std::vector<int> input;
         std::vector<int> output;
+	std::vector<int> unobservable;
 
 	std::vector<std::string> variables;
 	
         //new bdd constructer
         void construct_bdd_new();
+	void construct_bdd_belief_state();
 
 	// domain-spec separate construction
 	// Front need to be called before variable construction for domain
@@ -67,9 +70,7 @@ class DFA
 
         //new bdd constructer
         std::vector<vbdd> tBDD;
-        vbdd try_get(int index);
-
-
+        vbdd try_get(int index, bool partial_observability);
 };
 
 #endif // DFA_H

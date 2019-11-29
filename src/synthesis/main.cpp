@@ -31,14 +31,27 @@ int main(int argc, char ** argv){
     string partfile;
     string autfile;
     string starting_player;
-    if(argc != 4){
-        cout<<"Usage: ./Syft LTLFfile Partfile Starting_player(0: system, 1: environment)"<<endl;
+    string observability;
+    if(argc != 5){
+        cout<<"Usage: ./Syft LTLFfile Partfile Starting_player(0: system, 1: environment) Observability(partial, full)"<<endl;
         return 0;
     }
     else{
         filename = argv[1];
         partfile = argv[2];
         starting_player = argv[3];
+	observability = argv[4];
+    }
+
+    bool partial_observability;
+
+    if (observability == "partial")
+      partial_observability = true;
+    else if (observability == "full")
+      partial_observability = false;
+    else {
+      cout << "Observability should be one of: partial, full" << endl;
+      return 0;
     }
 
     shared_ptr<Cudd> mgr = make_shared<Cudd>();

@@ -30,32 +30,46 @@ DFA::~DFA()
     //dtor
     //delete mgr;// = NULL;
 }
-void DFA::initialize(string filename, string partfile){
+void DFA::initialize(string filename, string partfile, bool partial_observability){
     //ctor
     read_from_file(filename);
     cout<<"The number of explicit states: "<<nstates<<endl;
-    nbits = state2bin(nstates-1).length();
 
-    //get_bdd();
-    //print_vec(bdd);
-    //construct_bdd();
-    construct_bdd_new();
-    cout<<"The number of state variables: "<<nbits<<endl;
-    read_partfile(partfile);
+    if (partial_observability) {
+      nbits = nstates;
 
-    initbv = vector<int>(nbits);
-    int temp = init;
-    for (int i=nbits-1; i>=0; i--){
-      initbv[i] = temp%2;
-      temp = temp/2;
+      read_partfile(partfile);
+      construct_bdd_belief_state();
+
+      initbv = vector<int>(nstates, 0);
+      initbv[init] = 1;
     }
-}
+    else {
+      nbits = state2bin(nstates-1).length();
 
+      //get_bdd();
+      //print_vec(bdd);
+      //construct_bdd();
+      construct_bdd_new();
+
+      read_partfile(partfile);
+
+      initbv = vector<int>(nbits);
+      int temp = init;
+      for (int i=nbits-1; i>=0; i--){
+	initbv[i] = temp%2;
+	temp = temp/2;
+      }
+    }
+
+    cout<<"The number of state variables: "<<nbits<<endl;
+}
 
 void DFA::read_partfile(string partfile){
     ifstream f(partfile.c_str());
     vector<string> inputs;
     vector<string> outputs;
+    vector<string> unobservables;
     string line;
     while(getline(f, line)){
         if(f.is_open()){
@@ -67,16 +81,21 @@ void DFA::read_partfile(string partfile){
                 split(outputs, line, is_any_of(" "));
                 //print(outputs);
             }
+	    else if(strfind(line, "unobservables")){
+	        split(unobservables, line, is_any_of(" "));
+	    }
             else{
                 cout<<"read partfile error!"<<endl;
                 cout<<partfile<<endl;
                 cout<<line<<endl;
             }
-		}
+	}
     }
     f.close();
     set<string> input_set;
     set<string> output_set;
+    set<string> unobservable_set;
+
     for(int i = 1; i < inputs.size(); i++){
         string c = boost::algorithm::to_upper_copy(inputs[i]);
         input_set.insert(c);
@@ -85,12 +104,18 @@ void DFA::read_partfile(string partfile){
         string c = boost::algorithm::to_upper_copy(outputs[i]);
         output_set.insert(c);
     }
+    for(int i = 1; i < unobservables.size(); i++){
+        string c = boost::algorithm::to_upper_copy(unobservables[i]);
+        unobservable_set.insert(c);
+    }
 
     for(int i = 1; i < variables.size(); i++){
         if(input_set.find(variables[i]) != input_set.end())
             input.push_back(nbits+i-1);
         else if(output_set.find(variables[i]) != output_set.end())
             output.push_back(nbits+i-1);
+	else if(unobservable_set.find(variables[i]) != unobservable_set.end())
+	    unobservable.push_back(nbits+i-1);
         else if(variables[i] == "ALIVE")
             output.push_back(nbits+i-1);
         else
@@ -141,6 +166,8 @@ ifstream f(filename.c_str());
                     while(i < fields.size()){
                         if(fields[i] == "1")
                             finalstates.push_back(i-1);
+			else
+			    nonfinalstates.push_back(i-1);
                         i = i + 1;
                     }
                     //print_int(finalstates);
@@ -410,7 +437,7 @@ void DFA::construct_bdd_new(){
     for(int i = 0; i < tBDD.size(); i++){
         if(tBDD[i].size() == 0){
             //dumpdot(tBDD[i][0], "test");
-            vbdd b = try_get(i);
+	    vbdd b = try_get(i, false);
         }
     }
 
@@ -442,6 +469,43 @@ void DFA::construct_bdd_new(){
     }
 }
 
+void DFA::construct_bdd_belief_state(){
+    // belief-state space has one state variable per state of the automaton
+    for(int i = 0; i < nstates+nvars; i++){
+        BDD b = mgr->bddVar();
+        bddvars.push_back(b);
+    }
+
+    // review
+    for(int i = 0; i < nstates; i++){
+        BDD d = mgr->bddZero();
+        res.push_back(d);
+    }
+    tBDD.resize(smtbdd.size());
+    for(int i = 0; i < tBDD.size(); i++){
+        if(tBDD[i].size() == 0){
+	  vbdd b = try_get(i, true);
+        }
+    }
+
+    BDD unobservable_cube = mgr->bddOne();
+    for(int i = 0; i < nstates; i++){
+        unobservable_cube *= bddvars[unobservable[i]];
+    }
+
+    for(int i = 0; i < nstates; i++){
+        for(int j = 0; j < nstates; j++){
+	  BDD tmp = bddvars[j] * tBDD[behaviour[j]][i];
+	  res[i] = res[i] + tmp.ExistAbstract(unobservable_cube);
+        }
+    }
+
+    finalstatesBDD = mgr->bddOne();
+    for(int i = 0; i < nonfinalstates.size(); i++){
+      finalstatesBDD *= !bddvars[nonfinalstates[i]];
+    }
+}
+
 BDD DFA::state2bdd(int s){
     string bin = state2bin(s);
     BDD b = mgr->bddOne();
@@ -460,49 +524,55 @@ BDD DFA::state2bdd(int s){
 
 }
 
-vbdd DFA::try_get(int index){
-    if(tBDD[index].size() != 0)
-        return tBDD[index];
-    vbdd b;
-    if(smtbdd[index][0] == -1){
-        int s = smtbdd[index][1];
-        string bins = state2bin(s);
-        for(int m = 0; m < nbits - bins.size(); m++){
-            b.push_back(mgr->bddZero());
-        }
-        for(int i = 0; i < bins.size(); i++){
-            if(bins[i] == '0')
-                b.push_back(mgr->bddZero());
-            else if(bins[i] == '1')
-                b.push_back(mgr->bddOne());
-            else
-                cout<<"error binary state"<<endl;
-        }
-        tBDD[index] = b;
-        return b;
+vbdd DFA::try_get(int index, bool partial_observability){
+  if(tBDD[index].size() != 0)
+    return tBDD[index];
+  vbdd b;
+  if(smtbdd[index][0] == -1){
+    int s = smtbdd[index][1];
+    if (partial_observability) {
+	b = vbdd(nstates, mgr->bddZero());
+	b[s] = mgr->bddOne();
     }
-    else{
-        int rootindex = smtbdd[index][0];
-        int leftindex = smtbdd[index][1];
-        int rightindex = smtbdd[index][2];
-        BDD root = bddvars[rootindex+nbits];
-        //dumpdot(root, "test");
-        vbdd left = try_get(leftindex);
-        //for(int l = 0; l < left.size(); l++)
-           // dumpdot(left[l], "left"+to_string(l));
-        vbdd right = try_get(rightindex);
-        //for(int l = 0; l < left.size(); l++)
-           // dumpdot(right[l], "right"+to_string(l));
-        assert(left.size() == right.size());
-        for(int i = 0; i < left.size(); i++){
-            BDD tmp;
-            tmp = root.Ite(right[i], left[i]);//Assume this is correct
-            //dumpdot(tmp, "tmp");
-            b.push_back(tmp);
-        }
-        tBDD[index] = b;
-        return b;
+    else {
+      string bins = state2bin(s);
+      for(int m = 0; m < nbits - bins.size(); m++){
+	b.push_back(mgr->bddZero());
+      }
+      for(int i = 0; i < bins.size(); i++){
+	if(bins[i] == '0')
+	  b.push_back(mgr->bddZero());
+	else if(bins[i] == '1')
+	  b.push_back(mgr->bddOne());
+	else
+	  cout<<"error binary state"<<endl;
+      }
     }
+    tBDD[index] = b;
+    return b;
+  }
+  else{
+    int rootindex = smtbdd[index][0];
+    int leftindex = smtbdd[index][1];
+    int rightindex = smtbdd[index][2];
+    BDD root = bddvars[rootindex+nbits];
+    //dumpdot(root, "test");
+    vbdd left = try_get(leftindex, partial_observability);
+    //for(int l = 0; l < left.size(); l++)
+    // dumpdot(left[l], "left"+to_string(l));
+    vbdd right = try_get(rightindex, partial_observability);
+    //for(int l = 0; l < left.size(); l++)
+    // dumpdot(right[l], "right"+to_string(l));
+    assert(left.size() == right.size());
+    for(int i = 0; i < left.size(); i++){
+      BDD tmp;
+      tmp = root.Ite(right[i], left[i]);//Assume this is correct
+      //dumpdot(tmp, "tmp");
+      b.push_back(tmp);
+    }
+    tBDD[index] = b;
+    return b;
+  }
 }
 
 void DFA::dumpdot(BDD &b, string filename){
