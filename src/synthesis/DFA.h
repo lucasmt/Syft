@@ -11,6 +11,9 @@ class DFA
         DFA(std::shared_ptr<Cudd> m);
 	DFA();
         virtual ~DFA();
+
+        std::shared_ptr<Cudd> mgr;
+
         void initialize(std::string filename, std::string partfile);
         //void initialize(std::string filename, std::string partfile, Cudd& manager);
         std::vector<item> bdd;
@@ -36,8 +39,6 @@ class DFA
 	
         //new bdd constructer
         void construct_bdd_new();
-
-        std::shared_ptr<Cudd> mgr;
 
 	// domain-spec separate construction
 	// Front need to be called before variable construction for domain
