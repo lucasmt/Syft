@@ -10,7 +10,7 @@
 class syn
 {
     public:
-        syn(std::shared_ptr<Cudd> m, std::string filename, std::string partfile, bool partial_observability = false);
+        syn(std::shared_ptr<Cudd> m, std::string filename, std::string partfile, bool partial_observability);
 	syn(std::shared_ptr<Cudd> m, std::unique_ptr<DFA> d);
 	bool realizablity_sys(std::unordered_map<unsigned int, BDD>& IFstrategy);
         bool realizablity_env(std::unordered_map<unsigned int, BDD>& IFstrategy);
