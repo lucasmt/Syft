@@ -489,7 +489,7 @@ void DFA::construct_bdd_belief_state(){
     }
 
     BDD unobservable_cube = mgr->bddOne();
-    for(int i = 0; i < nstates; i++){
+    for(int i = 0; i < unobservable.size(); i++){
         unobservable_cube *= bddvars[unobservable[i]];
     }
 
