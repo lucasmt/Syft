@@ -3,6 +3,7 @@
 #include <memory>
 #include <chrono>
 #include "syn.h"
+#include "CoRDFA_syn.h"
 
 using std::string;
 using std::shared_ptr;
@@ -11,6 +12,8 @@ using std::move;
 using std::cout;
 using std::endl;
 namespace chrono = std::chrono;
+using std::unique_ptr;
+using std::make_unique;
 
 string get_DFAfile(string LTLFfile){
     string FOL = LTLFfile+".mona";
@@ -32,8 +35,9 @@ int main(int argc, char ** argv){
     string autfile;
     string starting_player;
     string observability;
+    string spec_type;
     if(argc != 5){
-        cout<<"Usage: ./Syft LTLFfile Partfile Starting_player(0: system, 1: environment) Observability(partial, full)"<<endl;
+        cout<<"Usage: ./Syft LTLFfile Partfile Starting_player(0: system, 1: environment) Observability(partial, full) SpecType(dfa, cordfa)"<<endl;
         return 0;
     }
     else{
@@ -41,6 +45,7 @@ int main(int argc, char ** argv){
         partfile = argv[2];
         starting_player = argv[3];
 	observability = argv[4];
+	spec_type = argv[5];
     }
 
     bool partial_observability;
@@ -54,6 +59,17 @@ int main(int argc, char ** argv){
       return 0;
     }
 
+    bool cordfa_spec;
+
+    if (spec_type == "dfa")
+      cordfa_spec = false;
+    else if (spec_type == "cordfa")
+      cordfa_spec = true;
+    else {
+      cout << "SpecType should be one of: dfa, cordfa" << endl;
+      return 0;
+    }
+
     shared_ptr<Cudd> mgr = make_shared<Cudd>();
     clock_t c_mona_dfa_end = clock();
     auto t_mona_dfa_end = chrono::high_resolution_clock::now();
@@ -63,7 +79,12 @@ int main(int argc, char ** argv){
               << "DFA constructed by MONA wall clock time passed: "
               << std::chrono::duration<double, std::milli>(t_mona_dfa_end-t_start).count()
               << " ms\n";
-    syn test(move(mgr), autfile, partfile, partial_observability);
+
+    unique_ptr<syn> test =
+      cordfa_spec
+      ? make_unique<CoRDFA_syn>(move(mgr), autfile, partfile)
+      : make_unique<syn>(move(mgr), autfile, partfile, partial_observability);
+    
     clock_t c_dfa_end = clock();
     auto t_dfa_end = chrono::high_resolution_clock::now();
     std::cout << "DFA CPU time used: "
@@ -76,9 +97,9 @@ int main(int argc, char ** argv){
     std::unordered_map<unsigned, BDD> strategy;
 
     if(starting_player == "1")
-        res = test.realizablity_env(strategy);
+        res = test->realizablity_env(strategy);
     else
-        res = test.realizablity_sys(strategy);
+        res = test->realizablity_sys(strategy);
 
     if(res)
         cout<<"realizable"<<endl;
