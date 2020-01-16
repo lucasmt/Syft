@@ -12,6 +12,8 @@ using std::move;
 using std::cout;
 using std::endl;
 
+syn::syn() {}
+
 syn::syn(shared_ptr<Cudd> m, string filename, string partfile, bool partial_observability)
 {
     //ctor
@@ -117,6 +119,7 @@ bool syn::realizablity_sys(unordered_map<unsigned int, BDD>& IFstrategy){
         }
 
         BDD tmp = W[cur] + univsyn_sys(I);
+
         W.push_back(tmp);
         cur++;
 
@@ -303,21 +306,4 @@ void syn::dumpdot(BDD &b, string filename){
 	this->mgr->DumpDot(single, NULL, NULL, fp);
 	fclose(fp);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

@@ -9,9 +9,10 @@
 
 class syn
 {
-    public:
+ public:
         syn(std::shared_ptr<Cudd> m, std::string filename, std::string partfile, bool partial_observability);
 	syn(std::shared_ptr<Cudd> m, std::unique_ptr<DFA> d);
+	syn();
 	bool realizablity_sys(std::unordered_map<unsigned int, BDD>& IFstrategy);
         bool realizablity_env(std::unordered_map<unsigned int, BDD>& IFstrategy);
         virtual ~syn();
@@ -20,14 +21,15 @@ class syn
 	std::unique_ptr<DFA> bdd;
 
  protected:
-    private:
         std::shared_ptr<Cudd> mgr;
+        void initializer();
         int cur = 0;
-        bool fixpoint();
         std::vector<BDD> W;
         std::vector<BDD> Wprime;
+
+ private:
+        bool fixpoint();
         std::string state2bin(int n);
-        void initializer();
         BDD state2bdd(int s);
         int* state2bit(int n);
         int** outindex();
