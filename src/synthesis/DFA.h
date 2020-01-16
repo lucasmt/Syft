@@ -48,15 +48,16 @@ class DFA
 	// back is called after the components are constructed
 	void construct_from_comp_front(std::string filename);
 	void construct_from_comp_back(vbdd& S2S, vbdd& S2P, vbdd& Svars, vbdd& Ivars, vbdd& Ovars, std::vector<int> IS);
+	void complement();
 
     protected:
-    private:
-		int nodes;
-		std::vector<int> behaviour;
-		//		std::vector<std::string> variables;
-		std::vector<item> smtbdd;
+	std::vector<int> behaviour;
+	std::vector<item> smtbdd;
         void read_from_file(std::string filename); //read the ltlf formula
         void read_partfile(std::string partfile); //read the partfile
+    private:
+	int nodes;
+	//		std::vector<std::string> variables;
         void get_bdd();
         void recur(int index, item tmp);
         void recur_left(int index, item tmp, int v);

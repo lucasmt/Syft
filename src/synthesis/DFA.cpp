@@ -164,7 +164,8 @@ ifstream f(filename.c_str());
                     split(fields, line, is_any_of(" "));
                     int i = 1; // start at 1 to ignore "final" token
                     while(i < fields.size()){
-                        if(fields[i] == "1")
+		      //if(fields[i] == "1")
+		        if(fields[i] != "-1")
                             finalstates.push_back(i-1);
 			else
 			    nonfinalstates.push_back(i-1);
@@ -583,16 +584,6 @@ void DFA::dumpdot(BDD &b, string filename){
 	fclose(fp);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+void DFA::complement() {
+  finalstatesBDD = !finalstatesBDD;
+}
