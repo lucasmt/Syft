@@ -9,4 +9,4 @@
 #include <iostream>
 #include <chrono>
 
-//using namespace CUDD;
+using namespace CUDD;
