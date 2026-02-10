@@ -87,7 +87,7 @@ int main(int argc, char ** argv){
         partfile = argv[2];
     }
     shared_ptr<Cudd> mgr = make_shared<Cudd>();
-    syn test(mgr, filename, partfile);
+    syn test(mgr, filename, partfile, false);
 
     std::unordered_map<unsigned, BDD> S2O;
     std::clock_t begint = std::clock();
